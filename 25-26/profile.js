@@ -13,9 +13,10 @@ const starter = {
 
 export default {
   id:'fop-2025-26',
-  checks:['java.sources','archive.extras','netbeans.project','fop.files','fop.starter','submission.report'],
+  checks:['java.sources','archive.extras','netbeans.project','fop.files','fop.availability','fop.starter','submission.report'],
   expectedProjectFiles:['build.xml','nbproject/project.xml','nbproject/project.properties','nbproject/build-impl.xml'],
   expectedSourceFiles:Object.keys(starter),
   javaVersion:'24', starter,
+  availability:new URL('./availability.json',import.meta.url),
   assets:['axeBox','bed','crop','dirt','hoeBox','houseFloor','pest','pickaxeBox','player','playerWithAxe','playerWithHoe','playerWithPick','playerWithSeeds','rock','seedBox','sowedDirt','stoneGround','tilledDirt','tree','wall'].map(n=>`assets/${n}.png`),
 };

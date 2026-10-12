@@ -12,5 +12,5 @@ export function makeFinding(key,values={},paths=[]) {
     if(!Object.hasOwn(values,name)) throw new Error(`Missing ${name} for check ${key}`);
     return String(values[name]);
   });
-  return {id:definition.id,status:definition.status,title:format(definition.title),message:format(definition.message),paths};
+  return {id:definition.id,status:definition.status,title:format(definition.title),message:format(definition.message),paths,...(definition.list&&{list:definition.list})};
 }

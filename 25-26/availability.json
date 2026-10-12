@@ -1,0 +1,97 @@
+{
+  "id": "fop-2025-26",
+  "version": 1,
+  "package": "uk.ac.bradford.farmgame",
+  "sources": {
+    "starter": "FoPCW2025.zip, src/uk/ac/bradford/farmgame/",
+    "spec": "2025-26 FoP Coursework Specification v1.1"
+  },
+  "scope": [
+    "Every entry is declared in the starter; modifiers and types are the starter's.",
+    "Listed: what the marking tests need, plus the methods and attributes that Tasks 1 to 13 tell students to complete or assign.",
+    "spec is the first task whose text refers to the entry. Entries without it are listed because a test needs them.",
+    "Not listed: the window, keyboard and launch code, parameter names, and anything no test needs that the specification does not ask students to write.",
+    "Compared: kind, names, parameter types, return and attribute types, and extends. A member inherited from a supertype satisfies its entry.",
+    "Not compared: access, static, final and abstract. Extra types, members and enum values are allowed."
+  ],
+  "types": [
+    {
+      "id": "GameEngine", "kind": "class", "modifiers": ["public"], "starter": "GameEngine.java", "spec": "Task 1",
+      "members": [
+        {"id": "GameEngine.turnNumber", "kind": "field", "name": "turnNumber", "type": "int", "modifiers": ["private"]},
+        {"id": "GameEngine.money", "kind": "field", "name": "money", "type": "int", "modifiers": ["private"], "spec": "Task 10"},
+        {"id": "GameEngine.level", "kind": "field", "name": "level", "type": "Tile[][]", "modifiers": ["private"], "spec": "Task 3"},
+        {"id": "GameEngine.player", "kind": "field", "name": "player", "type": "Player", "modifiers": ["private"], "spec": "Task 1"},
+        {"id": "GameEngine.pest", "kind": "field", "name": "pest", "type": "Pest", "modifiers": ["private"], "spec": "Task 11"},
+        {"id": "GameEngine.debris", "kind": "field", "name": "debris", "type": "Entity[]", "modifiers": ["private"], "spec": "Task 12"},
+        {"id": "GameEngine(GameGUI)", "kind": "constructor", "parameters": ["GameGUI"], "modifiers": ["public"]},
+        {"id": "GameEngine.createPlayer()", "kind": "method", "name": "createPlayer", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 1"},
+        {"id": "GameEngine.movePlayer(int)", "kind": "method", "name": "movePlayer", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "GameEngine.generateFarm()", "kind": "method", "name": "generateFarm", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 3"},
+        {"id": "GameEngine.betterMovePlayer(int)", "kind": "method", "name": "betterMovePlayer", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 4"},
+        {"id": "GameEngine.generateBetterFarm()", "kind": "method", "name": "generateBetterFarm", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 5"},
+        {"id": "GameEngine.generateEvenBetterFarm()", "kind": "method", "name": "generateEvenBetterFarm", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 8"},
+        {"id": "GameEngine.growCrops()", "kind": "method", "name": "growCrops", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 9"},
+        {"id": "GameEngine.evenBetterMovePlayer(int)", "kind": "method", "name": "evenBetterMovePlayer", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 9"},
+        {"id": "GameEngine.movePest()", "kind": "method", "name": "movePest", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 11"}
+      ]
+    },
+    {
+      "id": "Entity", "kind": "class", "modifiers": ["public", "abstract"], "starter": "Entity.java", "spec": "Task 2",
+      "members": [
+        {"id": "Entity.getX()", "kind": "method", "name": "getX", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.getY()", "kind": "method", "name": "getY", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.setPosition(int,int)", "kind": "method", "name": "setPosition", "parameters": ["int", "int"], "returns": "void", "modifiers": ["public"], "spec": "Task 2"}
+      ]
+    },
+    {
+      "id": "Player", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Player.java", "spec": "Task 1",
+      "members": [
+        {"id": "Player(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 1"},
+        {"id": "Player.getHeldItem()", "kind": "method", "name": "getHeldItem", "parameters": [], "returns": "int", "modifiers": ["public"]}
+      ]
+    },
+    {
+      "id": "Tile", "kind": "class", "modifiers": ["public"], "starter": "Tile.java", "spec": "Task 3",
+      "members": [
+        {"id": "Tile(Tile.TileType)", "kind": "constructor", "parameters": ["Tile.TileType"], "modifiers": ["public"], "spec": "Task 3"},
+        {"id": "Tile.getType()", "kind": "method", "name": "getType", "parameters": [], "returns": "Tile.TileType", "modifiers": ["public"]}
+      ]
+    },
+    {
+      "id": "Tile.TileType", "kind": "enum", "modifiers": ["public"], "nestedIn": "Tile", "starter": "Tile.java", "spec": "Task 3",
+      "members": [
+        {"id": "Tile.TileType.AXE_BOX", "kind": "constant", "name": "AXE_BOX", "spec": "Task 12"},
+        {"id": "Tile.TileType.BED", "kind": "constant", "name": "BED", "spec": "Task 8"},
+        {"id": "Tile.TileType.CROP", "kind": "constant", "name": "CROP", "spec": "Task 9"},
+        {"id": "Tile.TileType.DIRT", "kind": "constant", "name": "DIRT", "spec": "Task 5"},
+        {"id": "Tile.TileType.HOE_BOX", "kind": "constant", "name": "HOE_BOX", "spec": "Task 6"},
+        {"id": "Tile.TileType.HOUSE_FLOOR", "kind": "constant", "name": "HOUSE_FLOOR", "spec": "Task 8"},
+        {"id": "Tile.TileType.PICKAXE_BOX", "kind": "constant", "name": "PICKAXE_BOX", "spec": "Task 12"},
+        {"id": "Tile.TileType.SEED_BOX", "kind": "constant", "name": "SEED_BOX", "spec": "Task 7"},
+        {"id": "Tile.TileType.SOWED_DIRT", "kind": "constant", "name": "SOWED_DIRT", "spec": "Task 7"},
+        {"id": "Tile.TileType.STONE_GROUND", "kind": "constant", "name": "STONE_GROUND", "spec": "Task 3"},
+        {"id": "Tile.TileType.TILLED_DIRT", "kind": "constant", "name": "TILLED_DIRT", "spec": "Task 6"},
+        {"id": "Tile.TileType.WALL", "kind": "constant", "name": "WALL", "spec": "Task 8"}
+      ]
+    },
+    {"id": "Pest", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Pest.java", "spec": "Task 11", "members": []},
+    {"id": "Rock", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Rock.java", "spec": "Task 12", "members": []},
+    {"id": "Tree", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Tree.java", "spec": "Task 12", "members": []},
+    {"id": "GameGUI", "kind": "class", "modifiers": ["public"], "starter": "GameGUI.java", "spec": "Task 3", "members": []}
+  ],
+  "tests": [
+    {
+      "ids": ["task1.player"],
+      "requires": ["GameEngine(GameGUI)", "GameEngine.createPlayer()", "GameEngine.player", "GameEngine.level", "Player", "Entity.getX()", "Entity.getY()", "Tile(Tile.TileType)", "Tile.getType()", "Tile.TileType.STONE_GROUND"]
+    },
+    {
+      "ids": ["task2.up", "task2.right", "task2.down", "task2.left"],
+      "requires": ["GameEngine(GameGUI)", "GameEngine.movePlayer(int)", "GameEngine.player", "GameEngine.level", "Player", "Player(int,int)", "Entity.getX()", "Entity.getY()", "Tile(Tile.TileType)", "Tile.getType()", "Tile.TileType.STONE_GROUND"]
+    },
+    {
+      "ids": ["task3.grid"],
+      "requires": ["GameEngine(GameGUI)", "GameEngine.generateFarm()", "GameEngine.level", "Tile", "Tile.getType()", "Tile.TileType"]
+    }
+  ]
+}

@@ -205,6 +205,90 @@ test('duplicate filenames and unsupported compression have specific results',asy
   }
 });
 
+const catalogue=JSON.parse(await readFile(new URL('../25-26/availability.json',import.meta.url),'utf8'));
+// Declarations only, written from the catalogue, so no starter code is published here.
+function catalogueSources() {
+  const declare=type=>{
+    const name=type.id.split('.').at(-1);
+    const constants=type.members.filter(m=>m.kind==='constant').map(m=>m.name);
+    const members=type.members.filter(m=>m.kind!=='constant').map(m=>{
+      const modifiers=m.modifiers.join(' ');
+      if(m.kind==='field')return `${modifiers} ${m.type} ${m.name};`;
+      const parameters=m.parameters.map((p,i)=>`${p} p${i}`).join(', ');
+      return m.kind==='method'?`${modifiers} ${m.returns} ${m.name}(${parameters}) {}`:`${modifiers} ${name}(${parameters}) {}`;
+    });
+    const nested=catalogue.types.filter(t=>t.nestedIn===type.id).map(declare);
+    const heading=`${type.modifiers.join(' ')} ${type.kind} ${name}${type.extends?' extends '+type.extends:''}${type.implements?' implements '+type.implements.join(', '):''}`;
+    return `${heading} {\n${[constants.length?constants.join(', ')+';':'',...members,...nested].filter(Boolean).join('\n')}\n}`;
+  };
+  return new Map(catalogue.types.filter(t=>!t.nestedIn).map(t=>[t.id,`package ${catalogue.package};\n${declare(t)}\n`]));
+}
+const swap=(type,from,to)=>sources=>{
+  assert.ok(sources.get(type).includes(from),from);
+  sources.set(type,sources.get(type).replace(from,to));
+};
+async function availability(change=()=>{}) {
+  const sources=catalogueSources();change(sources);
+  const project=entriesFor('').filter(([p])=>!p.endsWith('Main.java'));
+  const report=await checkSubmission(await zip([...project,...[...sources].map(([name,text])=>[`src/uk/ac/bradford/farmgame/${name}.java`,text])]),'fop-2025-26');
+  return Object.fromEntries(report.findings.filter(f=>f.id.startsWith('fop.availability')).map(f=>[f.id,f]));
+}
+
+test('code matching the availability catalogue passes',async()=>{
+  const found=await availability();
+  assert.deepEqual(Object.keys(found),['fop.availability']);
+  assert.equal(found['fop.availability'].status,'pass');
+  assert.match(found['fop.availability'].title,/^Required code: all \d+ items found$/);
+});
+test('missing or changed required code is listed by name',async()=>{
+  const cases=[
+    [swap('GameEngine','void movePlayer(','void walk('),'GameEngine.movePlayer(int): missing'],
+    [swap('GameEngine','void movePlayer(int p0)','void movePlayer(String p0)'),'GameEngine.movePlayer(int): expected parameters (int), found (String)'],
+    [swap('GameEngine','public void growCrops()','public int growCrops()'),'GameEngine.growCrops(): expected return type void, found int'],
+    [swap('GameEngine','void movePlayer(int p0)','void movePlayer(int... p0)'),'GameEngine.movePlayer(int): expected parameters (int), found (int[])'],
+    [swap('GameEngine','private Tile[][] level;','private Tile[] level;'),'GameEngine.level: expected type Tile[][], found Tile[]'],
+    [swap('GameEngine','private int turnNumber;','private int turn;'),'GameEngine.turnNumber: missing'],
+    [swap('Player','public Player(int p0, int p1)','public Player(int p0)'),'Player(int,int): expected parameters (int, int), found (int)'],
+    [swap('Player',' extends Entity',''),'class Player: expected to extend Entity'],
+    [swap('Tile','BED, ',''),'Tile.TileType.BED: missing'],
+    [swap('Entity','package uk.ac.bradford.farmgame;','package other;'),'class Entity: missing'],
+    [sources=>sources.delete('Pest'),'class Pest: missing'],
+  ];
+  for(const [change,expected] of cases) {
+    const found=await availability(change);
+    assert.deepEqual(Object.keys(found),['fop.availability'],expected);
+    assert.equal(found['fop.availability'].status,'warning',expected);
+    assert.deepEqual(found['fop.availability'].paths,[expected]);
+    assert.equal(found['fop.availability'].list,'item');
+  }
+});
+test('equivalent declarations, changed access, inheritance and extra code are accepted',async()=>{
+  const changes=[
+    swap('GameEngine','private Tile[][] level;','private Tile level[][];'),
+    swap('GameEngine','private void createPlayer()','public void createPlayer()'),
+    swap('GameEngine','public void movePlayer(int p0)','void movePlayer(int p0)'),
+    swap('GameEngine','private Tile[][] level;','public static Tile[][] level;'),
+    swap('GameEngine','private int money;','private int money = 0, bonus; // comment\n/* block */ private java.util.Random rng;'),
+    swap('Tile','public Tile(Tile.TileType p0)','public Tile(uk.ac.bradford.farmgame.Tile.TileType p0)'),
+    swap('Tile','public Tile.TileType getType()','public TileType getType()'),
+    swap('Tile','AXE_BOX, ','SIGNPOST, AXE_BOX, '),
+    sources=>{swap('Player',' extends Entity',' extends Being')(sources);sources.set('Being','package uk.ac.bradford.farmgame;\npublic class Being extends Entity {}\n');},
+  ];
+  for(const [index,change] of changes.entries()) {
+    const found=await availability(change);
+    assert.deepEqual(Object.keys(found),['fop.availability'],'case '+index);
+    assert.equal(found['fop.availability'].status,'pass','case '+index);
+  }
+});
+test('a file the parser cannot follow is named instead of reporting its code as missing',async()=>{
+  const broken=swap('GameEngine','public void growCrops() {}','public void growCrops() { int x = ; }');
+  // A syntax error alone hides nothing here, so every item is still found.
+  assert.equal((await availability(broken))['fop.availability'].status,'pass');
+  const found=await availability(sources=>{broken(sources);swap('GameEngine','void movePlayer(','void walk(')(sources);});
+  assert.deepEqual(Object.keys(found),['fop.availability-files']);
+  assert.deepEqual(found['fop.availability-files'].paths,['src/uk/ac/bradford/farmgame/GameEngine.java']);
+});
+
 const fixtures=JSON.parse(await readFile(new URL('./fixtures.json',import.meta.url),'utf8'));
 for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
   test('generated '+fixture.folder+'/'+fixture.file,async()=>{
@@ -217,7 +301,7 @@ for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
 test('full expectations reject missing, extra, duplicate and reclassified findings',()=>{
   const fixture=fixtures.find(c=>c.folder==='NetBeans-exports'&&c.file==='01-complete-project.zip');
   const findings=fixture.expected_checks.split(';').map(s=>{const [id,status]=s.trim().split(':');return {id,status};});
-  assert.equal(findings.length,6);
+  assert.equal(findings.length,7);
   const check=values=>assertExpected({complete:true,findings:values},fixture);
   check([...findings].reverse());
   for(const changed of [findings.slice(1),[...findings,{id:'unexpected',status:'pass'}],

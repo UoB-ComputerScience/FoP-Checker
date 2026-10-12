@@ -13,7 +13,8 @@ for(const entry of ['index.html','assets',...years,'checker/js','checker/checks'
   await cp(path.join(root,entry),path.join(output,entry),{recursive:true});
 }
 // Copy only the known dependency assets, not arbitrary files from a local cache.
-for(const entry of ['zip.js','LICENSE.txt','pdfjs/pdf.js','pdfjs/pdf.worker.js','pdfjs/LICENSE','pdfjs/cmaps','pdfjs/standard_fonts']) {
+for(const entry of ['zip.js','LICENSE.txt','pdfjs/pdf.js','pdfjs/pdf.worker.js','pdfjs/LICENSE','pdfjs/cmaps','pdfjs/standard_fonts',
+  'treesitter/web-tree-sitter.js','treesitter/web-tree-sitter.wasm','treesitter/tree-sitter-java.wasm','treesitter/LICENSE','treesitter/LICENSE-java']) {
   const destination=path.join(output,'checker/vendor',entry);
   await mkdir(path.dirname(destination),{recursive:true});
   await cp(path.join(root,'checker/vendor',entry),destination,{recursive:true});

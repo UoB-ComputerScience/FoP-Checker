@@ -34,6 +34,15 @@ export async function prepareDependencies() {
   for(const directory of ['cmaps','standard_fonts']) {
     await cp(path.join(pdf,directory),path.join(target,'pdfjs',directory),{recursive:true});
   }
+  // The Java parser loads web-tree-sitter.wasm from beside its script; keep the names.
+  await mkdir(path.join(target,'treesitter'));
+  for(const [source,destination] of [
+    ['web-tree-sitter/web-tree-sitter.js','web-tree-sitter.js'],
+    ['web-tree-sitter/web-tree-sitter.wasm','web-tree-sitter.wasm'],
+    ['web-tree-sitter/LICENSE','LICENSE'],
+    ['tree-sitter-java/tree-sitter-java.wasm','tree-sitter-java.wasm'],
+    ['tree-sitter-java/LICENSE','LICENSE-java'],
+  ])await copyFile(path.join(root,'node_modules',source),path.join(target,'treesitter',destination));
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {

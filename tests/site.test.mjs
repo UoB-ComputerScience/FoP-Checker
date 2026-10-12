@@ -23,7 +23,7 @@ test('deployment contains the student site, resolves local references and exclud
       await stat(target);
     }
   }
-  for(const entry of ['zip.js','pdfjs/pdf.js','pdfjs/pdf.worker.js','pdfjs/cmaps','pdfjs/standard_fonts']) {
+  for(const entry of ['zip.js','pdfjs/pdf.js','pdfjs/pdf.worker.js','pdfjs/cmaps','pdfjs/standard_fonts','treesitter/web-tree-sitter.js','treesitter/web-tree-sitter.wasm','treesitter/tree-sitter-java.wasm']) {
     await stat(path.join(output,'checker/vendor',entry));
   }
 });

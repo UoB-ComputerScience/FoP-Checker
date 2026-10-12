@@ -173,6 +173,39 @@ export default {
     "purpose": "Identify supplied images potentially omitted from an export.",
     "method": "Compare paths with the twenty original game images. Replacements are allowed; image contents and custom references are not validated."
   },
+  "fop.availability.pass": {
+    "id": "fop.availability",
+    "status": "pass",
+    "title": "Required code: all {count} items found",
+    "message": "",
+    "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored."
+  },
+  "fop.availability.warning": {
+    "id": "fop.availability",
+    "status": "warning",
+    "title": "Required code: missing or changed",
+    "message": "Compare the listed items with the starter project.",
+    "list": "item",
+    "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored."
+  },
+  "fop.availability.info": {
+    "id": "fop.availability",
+    "status": "info",
+    "title": "Required code: not checked",
+    "message": "This browser could not run the check.",
+    "purpose": "Say plainly when the code check did not run, without failing the other checks.",
+    "method": "Shown if the Java parser or availability.json cannot be loaded."
+  },
+  "fop.availability-files.warning": {
+    "id": "fop.availability-files",
+    "status": "warning",
+    "title": "Required code: files could not be read",
+    "message": "Open the listed files in NetBeans and check for errors.",
+    "purpose": "Avoid reporting code as missing when the file holding it could not be read reliably.",
+    "method": "List a file only when an expected item was not found as required and the parser met syntax it could not follow in that file, or the file is not UTF-8. Items from such files are not reported as missing or changed."
+  },
   "fop.starter.error": {
     "id": "fop.starter",
     "status": "error",

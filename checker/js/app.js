@@ -21,7 +21,7 @@ function findingCard(f) {
   if(f.message)line.append(document.createTextNode(' — '+f.message));
   card.append(line);
   if(f.paths.length) {
-    const details=node('details',undefined,'finding-paths');details.append(node('summary',`Show ${f.paths.length} file path${f.paths.length===1?'':'s'}`));
+    const details=node('details',undefined,'finding-paths');details.append(node('summary',`Show ${f.paths.length} ${f.list||'file path'}${f.paths.length===1?'':'s'}`));
     const list=node('ul');details.append(list);
     details.addEventListener('toggle',()=>{
       if(!details.open||list.childElementCount)return;

@@ -1,6 +1,7 @@
 import {makeFinding} from './findings.js';
 import {readArchive,ArchiveError} from './archive.js';
 import {getProfile} from './profiles.js';
+import {compareDeclarations} from './availability.js';
 
 export const normaliseText=text=>text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
 export async function sha256(data) {
@@ -26,6 +27,14 @@ function property(text,key) {
   if(!text) return undefined;
   const line=text.split(/\r?\n/).filter(l=>l.trim().startsWith(`${key}=`)||l.trim().startsWith(`${key} =`)).at(-1);
   return line?.slice(line.indexOf('=')+1).trim();
+}
+
+// The catalogue is data shared with the marking tools, so it stays JSON.
+async function readJson(url) {
+  if(url.protocol==='file:') return JSON.parse(await (await import('node:fs/promises')).readFile(url,'utf8'));
+  const response=await fetch(url);
+  if(!response.ok) throw new Error('Catalogue not found.');
+  return response.json();
 }
 
 const checks={
@@ -62,7 +71,7 @@ const checks={
       const segments=src.split('/').filter(s=>s&&s!=='.');
       const prefix=ctx.root+(segments.length?segments.join('/')+'/':'');
       if(![...files.keys()].some(p=>p.startsWith(prefix)&&p.endsWith('.java'))) add('netbeans.source-path.error',{folder:src});
-      else if(!missing.length) add('netbeans.project.pass');
+      else {ctx.sourcePrefix=prefix;if(!missing.length) add('netbeans.project.pass');}
     } else add('netbeans.source-path.info');
     const source=property(config,'javac.source'), target=property(config,'javac.target'), release=property(config,'javac.release');
     if(source===profile.javaVersion&&target===profile.javaVersion&&(!release||release===profile.javaVersion)) add('netbeans.java-version.pass',{version:profile.javaVersion});
@@ -76,6 +85,20 @@ const checks={
     const assetsMissing=profile.assets.filter(p=>!files.has(root+p));
     if(assetsMissing.length) add('fop.assets.warning',{},assetsMissing);
     else add('fop.assets.pass');
+  },
+  'fop.availability': async ({files,profile,root,sourcePrefix,add})=>{
+    if(root===undefined) return;
+    let catalogue,declared;
+    try {
+      const java=[...files.values()].filter(f=>f.path.startsWith(root)&&f.path.endsWith('.java'));
+      const configured=java.filter(f=>f.path.startsWith(sourcePrefix??root+'src/'));
+      catalogue=await readJson(profile.availability);
+      declared=await (await import('./java.js')).readDeclarations(configured.length?configured:java);
+    } catch {add('fop.availability.info');return;}
+    const {problems,compared,files:unread}=compareDeclarations(catalogue,declared.types,declared.unread);
+    if(unread.length) add('fop.availability-files.warning',{},unread);
+    if(problems.length) add('fop.availability.warning',{},problems);
+    else if(!unread.length) add('fop.availability.pass',{count:compared});
   },
   'fop.starter': async ({files,profile,root,add})=>{
     if(root===undefined) return;
