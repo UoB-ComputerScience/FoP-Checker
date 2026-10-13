@@ -22,7 +22,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --ignore-scripts --omit=optional
-      - run: node --test tests/site.test.mjs
+      - run: npm test
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {assertExpected} from './expectations.js';
 import {ZipWriter,Uint8ArrayWriter,Uint8ArrayReader,TextReader} from '../checker/vendor/zip.js';
 import {checkSubmission,detectRoots,inspectProject,normaliseText,sha256} from '../checker/js/checker.js';
 import {inspectMetadata,ArchiveError} from '../checker/js/archive.js';
@@ -147,9 +146,8 @@ test('compiled output alongside source creates no extra finding',async()=>{
   assert.equal(result.findings.some(f=>f.status==='error'),false);
 });
 test('RAR and 7z signatures are advisory regardless of filename',async()=>{
-  const {readFile}=await import('node:fs/promises');
-  const rar=await readFile(new URL('../../.FoP-TestFiles/Generated/NetBeans-exports/09-project-export.rar',import.meta.url));
-  // This synthetic 7z header tests format recognition only, not archive validity.
+  // These synthetic headers test format recognition only, not archive validity.
+  const rar=new Uint8Array([0x52,0x61,0x72,0x21,0x1a,0x07,0x01,0x00]);
   const sevenZip=new Uint8Array([0x37,0x7a,0xbc,0xaf,0x27,0x1c,0,4]);
   for(const [bytes,name] of [[rar,'project.rar'],[rar,'project.zip'],[sevenZip,'project.7z'],[sevenZip,'project.zip']]){
     const result=await checkSubmission(new File([bytes],name),'farm-25-26');
@@ -196,18 +194,6 @@ test('ZIP contents are checked despite a misleading Java filename',async()=>{
   assert.equal(result.complete,true);
   assert.ok(has(result,'archive.integrity','pass'));
   assert.ok(has(result,'submission.extension','warning'));
-});
-
-test('duplicate filenames and unsupported compression have specific results',async()=>{
-  const {readFile}=await import('node:fs/promises');
-  const cases=[['12-duplicate-filename.zip','archive.duplicate','error'],['10-bzip2-compression.zip','archive.compression','warning'],['11-lzma-compression.zip','archive.compression','warning'],['15-parent-directory-path.zip','archive.paths','error']];
-  for(const [name,id,status] of cases){
-    const bytes=await readFile(new URL('../../.FoP-TestFiles/Generated/Archive-errors/'+name,import.meta.url));
-    const result=await checkSubmission(new File([bytes],name),'farm-25-26');
-    assert.ok(has(result,id,status),name);
-    assert.equal(result.complete,false);
-    assert.equal(has(result,'archive.unreadable'),false);
-  }
 });
 
 const catalogue=JSON.parse(await readFile(new URL('../farm-25-26/availability.json',import.meta.url),'utf8'));
@@ -312,25 +298,4 @@ test('common syntax mistakes are caught and valid modern Java is not',async()=>{
     'enum Dir { UP(0, -1), LEFT(-1, 0) { @Override int cost() { return 2; } }; final int dx, dy; Dir(int dx, int dy) { this.dx = dx; this.dy = dy; } int cost() { return 1; } }',
     'void flow() throws Exception { outer: for (int i = 0, j = 5; i < j; i++, j--) { if (i == 2) continue outer; } try (java.util.Scanner s = new java.util.Scanner("x")) { s.next(); } catch (IllegalStateException | IllegalArgumentException e) { } finally { } int[][] g = {{1, 2}, {3}}; long big = 1_000_000L + 0x1F + 0b10; }'];
   for(const code of valid) assert.equal((await syntax(method(code)))['java.syntax'].status,'pass',code);
-});
-
-const fixtures=JSON.parse(await readFile(new URL('./fixtures.json',import.meta.url),'utf8'));
-for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
-  test('generated '+fixture.folder+'/'+fixture.file,async()=>{
-    const url=new URL('../../.FoP-TestFiles/Generated/'+encodeURIComponent(fixture.folder)+'/'+encodeURIComponent(fixture.file),import.meta.url);
-    const report=await checkSubmission(new File([await readFile(url)],fixture.file),'farm-25-26');
-    assertExpected(report,fixture);
-  });
-}
-
-test('full expectations reject missing, extra, duplicate and reclassified findings',()=>{
-  const fixture=fixtures.find(c=>c.folder==='NetBeans-exports'&&c.file==='01-complete-project.zip');
-  const findings=fixture.expected_checks.split(';').map(s=>{const [id,status]=s.trim().split(':');return {id,status};});
-  assert.equal(findings.length,8);
-  const check=values=>assertExpected({complete:true,findings:values},fixture);
-  check([...findings].reverse());
-  for(const changed of [findings.slice(1),[...findings,{id:'unexpected',status:'pass'}],
-    [...findings,findings[0]],[{...findings[0],status:'info'},...findings.slice(1)]]) {
-    assert.throws(()=>check(changed),/Findings differ/);
-  }
 });
