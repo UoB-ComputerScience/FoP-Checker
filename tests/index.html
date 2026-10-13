@@ -7,17 +7,18 @@
 <p>From the repository root, run <code>npm ci --ignore-scripts --omit=optional</code>,
 then <code>npm test</code> (Node 22.18 or later). This prepares the browser libraries
 and runs the ZIP regression tests and site build check.</p>
-<p>The regression suites need the private examples in the ignored <code>TestFiles/</code>
-folder. Expected findings are recorded in <code>tests/fixtures.json</code>.</p>
-<p>For browser tests, run the local helper <code>python TestFiles/Tools/serve.py</code>
+<p>The regression suites need the private examples in <code>.FoP-TestFiles/</code>, a local
+folder beside this repository that is shared with the marking tools. Expected findings are
+recorded in <code>tests/fixtures.json</code>.</p>
+<p>For browser tests, run the local helper <code>python .local/tools/serve.py</code>
 and open the address it prints. Stop it with Ctrl+C.</p>
 <ul>
   <li><a href="browser/generated.html">Generated examples</a> — archive, project and report workers.</li>
   <li><a href="browser/reports.html">Report regression tests</a> — synthetic cases and private reports.</li>
   <li><a href="browser/pdf.html">PDF regression tests</a> — readability, text and limits.</li>
 </ul>
-<p>Optional fixture generators and other Python helpers are kept locally in
-<code>TestFiles/Tools/</code>, alongside the private examples. They are not part of
+<p>Optional fixture generators and other Python helpers are kept locally in the ignored
+<code>.local/tools/</code> folder. They are not part of
 the application or included in the repository; use each helper's <code>--help</code>
 for its options. A fresh checkout needs those local files to run these suites.</p>
 <p><a href="../25-26/">Open the 2025–26 checker</a></p>

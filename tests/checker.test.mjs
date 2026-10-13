@@ -143,7 +143,7 @@ test('compiled output alongside source creates no extra finding',async()=>{
 });
 test('RAR and 7z signatures are advisory regardless of filename',async()=>{
   const {readFile}=await import('node:fs/promises');
-  const rar=await readFile(new URL('../TestFiles/Generated/NetBeans-exports/09-project-export.rar',import.meta.url));
+  const rar=await readFile(new URL('../../.FoP-TestFiles/Generated/NetBeans-exports/09-project-export.rar',import.meta.url));
   // This synthetic 7z header tests format recognition only, not archive validity.
   const sevenZip=new Uint8Array([0x37,0x7a,0xbc,0xaf,0x27,0x1c,0,4]);
   for(const [bytes,name] of [[rar,'project.rar'],[rar,'project.zip'],[sevenZip,'project.7z'],[sevenZip,'project.zip']]){
@@ -197,7 +197,7 @@ test('duplicate filenames and unsupported compression have specific results',asy
   const {readFile}=await import('node:fs/promises');
   const cases=[['12-duplicate-filename.zip','archive.duplicate','error'],['10-bzip2-compression.zip','archive.compression','warning'],['11-lzma-compression.zip','archive.compression','warning'],['15-parent-directory-path.zip','archive.paths','error']];
   for(const [name,id,status] of cases){
-    const bytes=await readFile(new URL('../TestFiles/Generated/Archive-errors/'+name,import.meta.url));
+    const bytes=await readFile(new URL('../../.FoP-TestFiles/Generated/Archive-errors/'+name,import.meta.url));
     const result=await checkSubmission(new File([bytes],name),'fop-2025-26');
     assert.ok(has(result,id,status),name);
     assert.equal(result.complete,false);
@@ -292,7 +292,7 @@ test('a file the parser cannot follow is named instead of reporting its code as 
 const fixtures=JSON.parse(await readFile(new URL('./fixtures.json',import.meta.url),'utf8'));
 for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
   test('generated '+fixture.folder+'/'+fixture.file,async()=>{
-    const url=new URL('../TestFiles/Generated/'+encodeURIComponent(fixture.folder)+'/'+encodeURIComponent(fixture.file),import.meta.url);
+    const url=new URL('../../.FoP-TestFiles/Generated/'+encodeURIComponent(fixture.folder)+'/'+encodeURIComponent(fixture.file),import.meta.url);
     const report=await checkSubmission(new File([await readFile(url)],fixture.file),'fop-2025-26');
     assertExpected(report,fixture);
   });

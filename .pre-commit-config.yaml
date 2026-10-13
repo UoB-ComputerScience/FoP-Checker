@@ -1,5 +1,5 @@
 # Private examples and upstream distributions must not be reformatted.
-exclude: ^(TestFiles/|checker/vendor/|node_modules/|_site/)
+exclude: ^(TestFiles/|\.local/|checker/vendor/|node_modules/|_site/)
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
