@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Check your Farm (25/26) Fundamentals of Programming coursework ZIP and report for correct formatting and missing files.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; worker-src 'self' blob:; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Farm 25/26 submission checker · University of Bradford</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/style.css">
+  <script type="module" src="../checker/js/app.js"></script>
+</head>
+<body data-coursework="farm-25-26">
+  <a href="#main" class="skip-link">Skip to checker</a>
+  <header class="site-header">
+    <img class="uob-logo" src="../assets/uob-logo.png" alt="University of Bradford">
+  </header>
+  <main id="main">
+    <div class="intro">
+      <h1>Fundamentals of Programming</h1>
+      <p class="coursework-meta">COS4016-B · Farm · 25/26</p>
+      <p class="intro-message">Check your coursework ZIP and report for correct formatting and missing files.</p>
+      <p class="intro-message">These eligibility checks flag issues that may cause a failure. They do not assess code or report quality.</p>
+      <p class="intro-message"><strong>You must submit both your ZIP and report on Canvas. This checker is not a submission point.</strong></p>
+    </div>
+    <div class="workspace">
+      <aside class="input-panel panel" aria-labelledby="upload-title">
+        <h2 id="upload-title">Coursework ZIP</h2>
+        <div id="drop-zone" class="drop-zone">
+          <svg class="upload-icon" aria-hidden="true" viewBox="0 0 48 48" fill="none"><path d="M24 32V10m-8 8 8-8 8 8M10 30v8h28v-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <strong>Drop your ZIP here</strong>
+          <label class="button primary file-label" for="file">Choose ZIP file</label>
+          <input id="file" type="file" class="visually-hidden">
+          <small>Up to 25 MiB</small>
+        </div>
+        <p class="submission-note"><strong>You must submit both your ZIP and report on Canvas. This checker is not a submission point.</strong></p>
+        <div id="selected-file" class="selected-file" hidden><span class="file-label-text">SELECTED FILE</span><strong id="filename"></strong><span id="file-details"></span></div>
+        <button id="cancel" class="button secondary" hidden>Cancel check</button>
+      </aside>
+      <section class="results-panel panel" aria-labelledby="results-title" aria-busy="false">
+        <h2 id="results-title">ZIP results</h2>
+        <p id="status" role="status" aria-live="polite">Select a ZIP to check:</p>
+        <ul id="empty-state" class="check-list"><li>Java source files</li><li>Project files and images</li><li>Java syntax errors</li><li>Required classes and methods</li><li>Unchanged starter code</li></ul>
+        <div id="findings"></div>
+        <details id="inventory" class="inventory" hidden><summary>Files in this ZIP <span id="file-count"></span></summary><ul id="file-list"></ul></details>
+      </section>
+    </div>
+    <div class="workspace report-workspace">
+      <aside class="input-panel panel" aria-labelledby="report-upload-title">
+        <h2 id="report-upload-title">Coursework report</h2>
+        <div id="report-drop-zone" class="drop-zone">
+          <svg class="upload-icon" aria-hidden="true" viewBox="0 0 48 48" fill="none"><path d="M14 6h14l8 8v28H14V6Zm14 0v10h8M20 24h10M20 31h10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <strong>Drop your report here</strong>
+          <label class="button primary file-label" for="report-file">Choose report file</label>
+          <input id="report-file" type="file" class="visually-hidden">
+          <small>Up to 25 MiB</small>
+        </div>
+        <p class="submission-note"><strong>You must submit both your ZIP and report on Canvas. This checker is not a submission point.</strong></p>
+        <div id="report-selected-file" class="selected-file" hidden><span class="file-label-text">SELECTED FILE</span><strong id="report-filename"></strong><span id="report-file-details"></span></div>
+        <button id="report-cancel" class="button secondary" hidden>Cancel check</button>
+      </aside>
+      <section class="results-panel panel" aria-labelledby="report-results-title" aria-busy="false">
+        <h2 id="report-results-title">Report results</h2>
+        <p id="report-status" role="status" aria-live="polite">Select a report to check:</p>
+        <ul id="report-empty-state" class="check-list"><li>Document format and readability</li><li>Empty content</li><li>Approximate word count</li></ul>
+        <div id="report-findings"></div>
+      </section>
+    </div>
+  </main>
+  <noscript><p class="noscript">Enable JavaScript to check your files locally in your browser.</p></noscript>
+</body>
+</html>

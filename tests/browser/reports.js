@@ -48,5 +48,5 @@ await test('Header-only PDF is broken; older Word remains unsupported',async()=>
 await test('Plain text renamed DOCX is rejected',async()=>assert(!(await check(new File(['not a document'],'report.docx'))).complete));
 await test('Ordinary software ZIP is not a report',async()=>assert(!(await check(await zip({'Main.java':'class Main {}'}))).complete));
 await test('XML entity declarations are rejected without expansion',async()=>{const p=docx();p['word/document.xml']='<!DOCTYPE a [<!ENTITY x "expanded">]>'+p['word/document.xml'];assert(!(await check(await zip(p))).complete);});
-await test('Old separate-report reminder removed',async()=>{const r=await checkSubmission(await zip({'Main.java':'class Main {}'},'project.zip'),'fop-2025-26');assert(!has(r,'submission.report'));});
+await test('Old separate-report reminder removed',async()=>{const r=await checkSubmission(await zip({'Main.java':'class Main {}'},'project.zip'),'farm-25-26');assert(!has(r,'submission.report'));});
 document.getElementById('status').textContent=`${passed} passed; ${failed} failed`;

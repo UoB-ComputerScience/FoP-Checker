@@ -50,36 +50,41 @@ test('empty and encrypted ZIPs explain why checking stopped',async()=>{
 });
 test('wrappers and rootless exports resolve to the correct project',async()=>{
   for(const root of ['', 'Renamed-Project/', 'wrapper/another/FoPCW2025student/']){
-    const result=await checkSubmission(await zip(entriesFor(root)),'fop-2025-26');assert.ok(has(result,'netbeans.project','pass'));assert.equal(has(result,'netbeans.source-path','pass'),false);assert.ok(has(result,'netbeans.java-version','pass'));
+    const result=await checkSubmission(await zip(entriesFor(root)),'farm-25-26');assert.ok(has(result,'netbeans.project','pass'));assert.equal(has(result,'netbeans.source-path','pass'),false);assert.ok(has(result,'netbeans.java-version','pass'));
   }
 });
 test('two projects are ambiguous and coursework path checks are not guessed',async()=>{
-  const result=await checkSubmission(await zip([...entriesFor('one/'),...entriesFor('one/backup/')]),'fop-2025-26');
+  const result=await checkSubmission(await zip([...entriesFor('one/'),...entriesFor('one/backup/')]),'farm-25-26');
   assert.ok(has(result,'netbeans.project','warning'));assert.ok(has(result,'fop.files','info'));assert.equal(has(result,'fop.assets'),false);
 });
 test('missing src directory is identified from the configuration',async()=>{
   const entries=entriesFor('').filter(([p])=>!p.startsWith('src/'));entries.push(['wrong/Main.java','class Main {}']);
-  const result=await checkSubmission(await zip(entries),'fop-2025-26');assert.ok(has(result,'netbeans.source-path','error'));
+  const result=await checkSubmission(await zip(entries),'farm-25-26');assert.ok(has(result,'netbeans.source-path','error'));
 });
 test('custom source expressions are not guessed',async()=>{
   const entries=entriesFor('');entries[1][1]='src.dir=${project.source}\njavac.source=24\njavac.target=24';
-  const result=await checkSubmission(await zip(entries),'fop-2025-26');assert.ok(has(result,'netbeans.source-path','info'));assert.equal(has(result,'netbeans.source-path','error'),false);
+  const result=await checkSubmission(await zip(entries),'farm-25-26');assert.ok(has(result,'netbeans.source-path','info'));assert.equal(has(result,'netbeans.source-path','error'),false);
 });
 test('valid dot and repeated-slash source settings do not create false errors',async()=>{
   for(const source of ['./src','.','src//','./src/']) {
     const entries=entriesFor('project/');entries[1][1]=`src.dir=${source}\njavac.source=24\njavac.target=24`;
-    const result=await checkSubmission(await zip(entries),'fop-2025-26');assert.ok(has(result,'netbeans.project','pass'),source);assert.equal(has(result,'netbeans.source-path','error'),false);
+    const result=await checkSubmission(await zip(entries),'farm-25-26');assert.ok(has(result,'netbeans.project','pass'),source);assert.equal(has(result,'netbeans.source-path','error'),false);
   }
 });
+test('a coursework without starter details runs the general checks only',async()=>{
+  const result=await checkSubmission(await zip(entriesFor('project/')),'diver-26-27');
+  assert.equal(result.complete,true);
+  assert.deepEqual(result.findings.map(f=>f.id+':'+f.status),['archive.integrity:pass','java.sources:pass','netbeans.project:pass','java.syntax:pass']);
+});
 test('extra classes are allowed without the obsolete report reminder',async()=>{
-  const result=await checkSubmission(await zip([...entriesFor(''),['src/NPC.java','class NPC {}'],['assets/custom.png','custom']]),'fop-2025-26');
+  const result=await checkSubmission(await zip([...entriesFor(''),['src/NPC.java','class NPC {}'],['assets/custom.png','custom']]),'farm-25-26');
   assert.equal(has(result,'submission.report'),false);assert.equal(result.findings.some(f=>f.status==='error'),false);
 });
 test('a report inside the ZIP is advisory, not an automatic rejection',async()=>{
-  const result=await checkSubmission(await zip([...entriesFor(''),['report.docx','document']]),'fop-2025-26');assert.ok(has(result,'submission.report','warning'));assert.equal(result.findings.some(f=>f.status==='error'),false);
+  const result=await checkSubmission(await zip([...entriesFor(''),['report.docx','document']]),'farm-25-26');assert.ok(has(result,'submission.report','warning'));assert.equal(result.findings.some(f=>f.status==='error'),false);
 });
 test('an incomplete export still receives specific expected-file feedback',async()=>{
-  const result=await checkSubmission(await zip(entriesFor('').filter(([p])=>p!=='build.xml')),'fop-2025-26');
+  const result=await checkSubmission(await zip(entriesFor('').filter(([p])=>p!=='build.xml')),'farm-25-26');
   assert.equal(has(result,'netbeans.project','pass'),false);assert.ok(has(result,'netbeans.files','warning'));assert.ok(has(result,'fop.assets','warning'));
 });
 test('non-UTF-8 source is flagged without claiming the ZIP is broken',async()=>{
@@ -99,14 +104,14 @@ test('portability warnings preserve filenames as text',()=>{
   const result=inspectMetadata([meta('CON.txt'),meta('a/trailing. '),meta('<b>.java')]);assert.equal(result.portability.length,3);
 });
 test('metadata and backups do not become the detected project',async()=>{
-  const result=await checkSubmission(await zip([...entriesFor('project/'),['__MACOSX/._build.xml','metadata'],['.DS_Store','metadata']]),'fop-2025-26');assert.ok(has(result,'netbeans.project','pass'));
+  const result=await checkSubmission(await zip([...entriesFor('project/'),['__MACOSX/._build.xml','metadata'],['.DS_Store','metadata']]),'farm-25-26');assert.ok(has(result,'netbeans.project','pass'));
 });
 test('project marker matching requires a complete path component',()=>{
   assert.deepEqual(detectRoots(['notbuild.xml','x/notnbproject/project.xml']),[]);
 });
 test('starter comparison tolerates BOM and line endings but notices code edits',async()=>{
   const path='src/Main.java';const starter='class Main {\n}\n';
-  const profile={...getProfile('fop-2025-26'),expectedSourceFiles:[path],starter:{[path]:await sha256(starter)},checks:['netbeans.project','fop.starter']};
+  const profile={...getProfile('farm-25-26'),expectedSourceFiles:[path],starter:{[path]:await sha256(starter)},checks:['netbeans.project','fop.starter']};
   const records=new Map(entriesFor('').map(([path,text])=>[path,{path,text,size:text.length}]));records.get(path).text='\uFEFFclass Main {\r\n}\r\n';
   let result=await inspectProject({files:records,portability:[]},profile);assert.ok(result.some(f=>f.id==='fop.starter'&&f.status==='error'));
   records.get(path).text='class Main { int changed; }';result=await inspectProject({files:records,portability:[]},profile);assert.equal(result.some(f=>f.id==='fop.starter'),false);
@@ -123,18 +128,18 @@ test('readable ZIP filename is advisory, broken ZIP is critical',async()=>{
 
 
 test('combined NetBeans pass requires build files and Java in the configured folder',async()=>{
-  const result=await checkSubmission(await zip(entriesFor('project/')),'fop-2025-26');
+  const result=await checkSubmission(await zip(entriesFor('project/')),'farm-25-26');
   assert.equal(result.findings.filter(f=>f.status==='pass'&&['netbeans.project','netbeans.files','netbeans.source-path'].includes(f.id)).length,1);
   const entries=entriesFor('project/').filter(([p])=>!p.endsWith('Main.java'));
   entries.push(['project/src/notes.txt','Notes'],['project/other/Main.java','class Main {}']);
-  const misplaced=await checkSubmission(await zip(entries),'fop-2025-26');
+  const misplaced=await checkSubmission(await zip(entries),'farm-25-26');
   assert.ok(has(misplaced,'java.sources','pass'));
   assert.ok(has(misplaced,'netbeans.source-path','error'));
   assert.equal(has(misplaced,'netbeans.project','pass'),false);
 });
 test('compiled output alongside source creates no extra finding',async()=>{
-  const baseline=await checkSubmission(await zip(entriesFor('')),'fop-2025-26');
-  const result=await checkSubmission(await zip([...entriesFor(''),['build/Main.class','compiled'],['dist/game.jar','jar']]),'fop-2025-26');
+  const baseline=await checkSubmission(await zip(entriesFor('')),'farm-25-26');
+  const result=await checkSubmission(await zip([...entriesFor(''),['build/Main.class','compiled'],['dist/game.jar','jar']]),'farm-25-26');
   // Archive integrity text reports the file count; compare check identities/statuses.
   const findings=r=>r.findings.map(f=>({id:f.id,status:f.status,paths:f.paths}));
   assert.equal(result.complete,baseline.complete);
@@ -147,7 +152,7 @@ test('RAR and 7z signatures are advisory regardless of filename',async()=>{
   // This synthetic 7z header tests format recognition only, not archive validity.
   const sevenZip=new Uint8Array([0x37,0x7a,0xbc,0xaf,0x27,0x1c,0,4]);
   for(const [bytes,name] of [[rar,'project.rar'],[rar,'project.zip'],[sevenZip,'project.7z'],[sevenZip,'project.zip']]){
-    const result=await checkSubmission(new File([bytes],name),'fop-2025-26');
+    const result=await checkSubmission(new File([bytes],name),'farm-25-26');
     assert.ok(has(result,'archive.format','warning'));
     assert.equal(result.complete,false);
     assert.equal(result.findings.length,1);
@@ -173,7 +178,7 @@ test('every check has maintainer reasoning without exposing it in student result
 
 test('individual Java and other non-ZIP files receive a direct ZIP instruction',async()=>{
   for(const name of ['GameEngine.java','notes.txt','build.xml','misnamed.zip']){
-    const result=await checkSubmission(new File(['public class GameEngine {}'],name),'fop-2025-26');
+    const result=await checkSubmission(new File(['public class GameEngine {}'],name),'farm-25-26');
     assert.ok(has(result,'archive.not-zip','error'));
     assert.equal(result.findings[0].message,'Submit a .zip file of your complete NetBeans project.');
     assert.equal(result.complete,false);
@@ -181,7 +186,7 @@ test('individual Java and other non-ZIP files receive a direct ZIP instruction',
 });
 test('truncated ZIP retains the damaged-archive result',async()=>{
   const original=await zip([['Main.java','class Main {}']]);
-  const result=await checkSubmission(new File([(await original.arrayBuffer()).slice(0,-12)],'project.zip'),'fop-2025-26');
+  const result=await checkSubmission(new File([(await original.arrayBuffer()).slice(0,-12)],'project.zip'),'farm-25-26');
   assert.ok(has(result,'archive.unreadable','error'));
   assert.equal(has(result,'archive.not-zip'),false);
 });
@@ -198,14 +203,14 @@ test('duplicate filenames and unsupported compression have specific results',asy
   const cases=[['12-duplicate-filename.zip','archive.duplicate','error'],['10-bzip2-compression.zip','archive.compression','warning'],['11-lzma-compression.zip','archive.compression','warning'],['15-parent-directory-path.zip','archive.paths','error']];
   for(const [name,id,status] of cases){
     const bytes=await readFile(new URL('../../.FoP-TestFiles/Generated/Archive-errors/'+name,import.meta.url));
-    const result=await checkSubmission(new File([bytes],name),'fop-2025-26');
+    const result=await checkSubmission(new File([bytes],name),'farm-25-26');
     assert.ok(has(result,id,status),name);
     assert.equal(result.complete,false);
     assert.equal(has(result,'archive.unreadable'),false);
   }
 });
 
-const catalogue=JSON.parse(await readFile(new URL('../25-26/availability.json',import.meta.url),'utf8'));
+const catalogue=JSON.parse(await readFile(new URL('../farm-25-26/availability.json',import.meta.url),'utf8'));
 // Declarations only, written from the catalogue, so no starter code is published here.
 function catalogueSources() {
   const declare=type=>{
@@ -230,7 +235,7 @@ const swap=(type,from,to)=>sources=>{
 async function codeFindings(prefix,change=()=>{}) {
   const sources=catalogueSources();change(sources);
   const project=entriesFor('').filter(([p])=>!p.endsWith('Main.java'));
-  const report=await checkSubmission(await zip([...project,...[...sources].map(([name,text])=>[`src/uk/ac/bradford/farmgame/${name}.java`,text])]),'fop-2025-26');
+  const report=await checkSubmission(await zip([...project,...[...sources].map(([name,text])=>[`src/uk/ac/bradford/farmgame/${name}.java`,text])]),'farm-25-26');
   return Object.fromEntries(report.findings.filter(f=>f.id.startsWith(prefix)).map(f=>[f.id,f]));
 }
 const availability=change=>codeFindings('fop.availability',change);
@@ -313,7 +318,7 @@ const fixtures=JSON.parse(await readFile(new URL('./fixtures.json',import.meta.u
 for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
   test('generated '+fixture.folder+'/'+fixture.file,async()=>{
     const url=new URL('../../.FoP-TestFiles/Generated/'+encodeURIComponent(fixture.folder)+'/'+encodeURIComponent(fixture.file),import.meta.url);
-    const report=await checkSubmission(new File([await readFile(url)],fixture.file),'fop-2025-26');
+    const report=await checkSubmission(new File([await readFile(url)],fixture.file),'farm-25-26');
     assertExpected(report,fixture);
   });
 }

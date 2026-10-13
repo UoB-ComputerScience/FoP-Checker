@@ -11,7 +11,7 @@ function check(file) {
       if(e.data.type==='report-package')resolve(e.data.prepared.report);
       else reject(new Error(JSON.stringify(e.data)));
     };
-    worker.postMessage({kind:'report',file,profileId:'fop-2025-26'});
+    worker.postMessage({kind:'report',file,profileId:'farm-25-26'});
   });
 }
 for(const fixture of (await(await fetch('../fixtures.json')).json()).filter(c=>c.pdf)) {

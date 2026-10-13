@@ -16,7 +16,7 @@ function check(file,kind) {
         else reject(new Error(JSON.stringify(e.data)));
       } catch(error){reject(error);}
     };
-    worker.postMessage({file,kind,profileId:'fop-2025-26'});
+    worker.postMessage({file,kind,profileId:'farm-25-26'});
   });
 }
 let passed=0,failed=0;const output=[];

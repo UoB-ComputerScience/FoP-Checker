@@ -75,7 +75,7 @@ export default {
     "title": "NetBeans project: not recognised",
     "message": "Export the complete project.",
     "purpose": "Ensure one identifiable project includes the files needed by its saved configuration.",
-    "method": "Locate the project using NetBeans metadata, with build.xml and GameEngine.java fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
+    "method": "Locate the project using NetBeans metadata, with build.xml and the coursework's main source file as fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
   },
   "netbeans.project.warning.2": {
     "id": "netbeans.project",
@@ -83,7 +83,7 @@ export default {
     "title": "NetBeans project: multiple projects found",
     "message": "Export your final project. Further project checks were skipped.",
     "purpose": "Ensure one identifiable project includes the files needed by its saved configuration.",
-    "method": "Locate the project using NetBeans metadata, with build.xml and GameEngine.java fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
+    "method": "Locate the project using NetBeans metadata, with build.xml and the coursework's main source file as fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
   },
   "netbeans.project.pass": {
     "id": "netbeans.project",
@@ -91,7 +91,7 @@ export default {
     "title": "NetBeans project: build files and source folder checked",
     "message": "",
     "purpose": "Ensure one identifiable project includes the files needed by its saved configuration.",
-    "method": "Locate the project using NetBeans metadata, with build.xml and GameEngine.java fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
+    "method": "Locate the project using NetBeans metadata, with build.xml and the coursework's main source file as fallbacks. A pass requires one root, all expected build files and a .java file under the configured source folder; wrapper and renamed folders are allowed."
   },
   "netbeans.files.warning": {
     "id": "netbeans.files",
@@ -147,15 +147,15 @@ export default {
     "title": "Starter source files: missing paths",
     "message": "Check the listed files. Intentional restructuring is allowed.",
     "purpose": "Identify original classes potentially omitted from an export.",
-    "method": "Compare paths with the ten starter source paths in the profile. Missing paths are advisory because intentional restructuring is allowed."
+    "method": "Compare paths with the starter source paths in the coursework profile. Missing paths are advisory because intentional restructuring is allowed."
   },
   "fop.source-files.pass": {
     "id": "fop.source-files",
     "status": "pass",
-    "title": "Starter source files: all 10 present",
+    "title": "Starter source files: all {count} present",
     "message": "",
     "purpose": "Identify original classes potentially omitted from an export.",
-    "method": "Compare paths with the ten starter source paths in the profile. Missing paths are advisory because intentional restructuring is allowed."
+    "method": "Compare paths with the starter source paths in the coursework profile. Missing paths are advisory because intentional restructuring is allowed."
   },
   "fop.assets.warning": {
     "id": "fop.assets",
@@ -163,15 +163,15 @@ export default {
     "title": "Game images: missing files",
     "message": "Include the listed images or your replacements.",
     "purpose": "Identify supplied images potentially omitted from an export.",
-    "method": "Compare paths with the twenty original game images. Replacements are allowed; image contents and custom references are not validated."
+    "method": "Compare paths with the original game images in the coursework profile. Replacements are allowed; image contents and custom references are not validated."
   },
   "fop.assets.pass": {
     "id": "fop.assets",
     "status": "pass",
-    "title": "Game images: all 20 present",
+    "title": "Game images: all {count} present",
     "message": "",
     "purpose": "Identify supplied images potentially omitted from an export.",
-    "method": "Compare paths with the twenty original game images. Replacements are allowed; image contents and custom references are not validated."
+    "method": "Compare paths with the original game images in the coursework profile. Replacements are allowed; image contents and custom references are not validated."
   },
   "fop.availability.pass": {
     "id": "fop.availability",
@@ -179,7 +179,7 @@ export default {
     "title": "Required code: all {count} items found",
     "message": "",
     "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
-    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the coursework's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
   },
   "fop.availability.warning": {
     "id": "fop.availability",
@@ -188,7 +188,7 @@ export default {
     "message": "Compare the listed items with the starter project.",
     "list": "item",
     "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
-    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the coursework's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
   },
   "java.syntax.error": {
     "id": "java.syntax",

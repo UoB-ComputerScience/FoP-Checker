@@ -10,14 +10,14 @@ export async function sha256(data) {
 }
 const ignored=path=>path.split('/').some(p=>p==='__MACOSX'||p==='.DS_Store'||p==='Thumbs.db'||p.startsWith('._'));
 
-export function detectRoots(paths) {
+export function detectRoots(paths,sourceMarker) {
   const roots=new Set();
   const endsWithPath=(path,marker)=>path===marker||path.endsWith('/'+marker);
   for(const path of paths) {
     for(const marker of ['nbproject/project.xml','nbproject/project.properties']) if(endsWithPath(path,marker)) roots.add(path.slice(0,-marker.length));
   }
   if(!roots.size) for(const path of paths) if(endsWithPath(path,'build.xml') && !endsWithPath(path,'nbproject/build.xml')) roots.add(path.slice(0,-'build.xml'.length));
-  if(!roots.size) for(const path of paths) if(endsWithPath(path,'src/uk/ac/bradford/farmgame/GameEngine.java')) roots.add(path.slice(0,-'src/uk/ac/bradford/farmgame/GameEngine.java'.length));
+  if(!roots.size&&sourceMarker) for(const path of paths) if(endsWithPath(path,sourceMarker)) roots.add(path.slice(0,-sourceMarker.length));
   return [...roots].sort();
 }
 
@@ -29,7 +29,7 @@ function property(text,key) {
   return line?.slice(line.indexOf('=')+1).trim();
 }
 
-// The catalogue is data shared with the marking tools, so it stays JSON.
+// A coursework's availability list is plain data, kept apart from the checks that read it.
 async function readJson(url) {
   if(url.protocol==='file:') return JSON.parse(await (await import('node:fs/promises')).readFile(url,'utf8'));
   const response=await fetch(url);
@@ -70,7 +70,7 @@ const checks={
   },
   'netbeans.project': ctx=>{
     const {files,profile,add}=ctx;
-    const roots=detectRoots([...files.keys()]);
+    const roots=detectRoots([...files.keys()],profile.rootMarker);
     if(!roots.length) {add('netbeans.project.warning');return;}
     if(roots.length>1) {add('netbeans.project.warning.2',{},roots.map(r=>r||'(ZIP root)'));return;}
     ctx.root=roots[0];
@@ -85,6 +85,7 @@ const checks={
       else {ctx.sourcePrefix=prefix;if(!missing.length) add('netbeans.project.pass');}
     } else add('netbeans.source-path.info');
     const source=property(config,'javac.source'), target=property(config,'javac.target'), release=property(config,'javac.release');
+    if(!profile.javaVersion) return;
     if(source===profile.javaVersion&&target===profile.javaVersion&&(!release||release===profile.javaVersion)) add('netbeans.java-version.pass',{version:profile.javaVersion});
     else add('netbeans.java-version.warning',{version:profile.javaVersion,source:source||'not set',target:target||'not set',releaseSetting:release?`, release=${release}`:''});
   },
@@ -92,10 +93,10 @@ const checks={
     if(root===undefined) {add('fop.files.info');return;}
     const sourceMissing=profile.expectedSourceFiles.filter(p=>!files.has(root+p));
     if(sourceMissing.length) add('fop.source-files.warning',{},sourceMissing);
-    else add('fop.source-files.pass');
+    else add('fop.source-files.pass',{count:profile.expectedSourceFiles.length});
     const assetsMissing=profile.assets.filter(p=>!files.has(root+p));
     if(assetsMissing.length) add('fop.assets.warning',{},assetsMissing);
-    else add('fop.assets.pass');
+    else add('fop.assets.pass',{count:profile.assets.length});
   },
   'java.syntax': async ctx=>{
     if(ctx.root===undefined) return;

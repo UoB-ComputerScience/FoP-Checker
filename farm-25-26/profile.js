@@ -12,7 +12,8 @@ const starter = {
 };
 
 export default {
-  id:'fop-2025-26',
+  id:'farm-25-26',
+  rootMarker:'src/uk/ac/bradford/farmgame/GameEngine.java',
   checks:['java.sources','archive.extras','netbeans.project','fop.files','java.syntax','fop.availability','fop.starter','submission.report'],
   expectedProjectFiles:['build.xml','nbproject/project.xml','nbproject/project.properties','nbproject/build-impl.xml'],
   expectedSourceFiles:Object.keys(starter),
