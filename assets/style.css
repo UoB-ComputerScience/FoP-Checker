@@ -13,7 +13,7 @@ main { width:min(1240px,100%); margin:0 auto; padding:clamp(24px,3vw,42px) 32px 
 .intro { margin-bottom:32px; }
 h1 { font-size:clamp(1.9rem,3vw,2.6rem); line-height:1.2; letter-spacing:-.035em; margin:0 0 12px; }
 .intro>p:last-child { color:var(--muted); margin:0; font-size:1.075rem; }
-.intro>.intro-message { color:var(--muted); margin:8px 0 0; font-size:1.075rem; }
+.intro>p.intro-message { color:var(--muted); margin:8px 0 0; font-size:1.075rem; }
 .report-workspace { margin-top:28px; }
 .workspace { display:grid; grid-template-columns:340px minmax(0,1fr); align-items:start; gap:22px; }
 .panel { padding:28px; border:1px solid rgba(205,216,228,.9); border-radius:20px; background:var(--white); box-shadow:var(--shadow); }
@@ -81,7 +81,7 @@ a { color:var(--blue); }
 @media(max-width:480px) { .site-header { padding:16px 20px; } main { padding:24px 16px 36px; } }
 @media(prefers-reduced-motion:no-preference) { .button,.drop-zone { transition:background .15s ease,border-color .15s ease; } }
 
-.coursework-meta { margin:0 0 12px; color:var(--muted); font-size:.875rem; }
+.coursework-meta { margin:0; color:var(--muted); font-size:.875rem; }
 .input-panel h2 { margin-bottom:22px; }
 .check-list { margin:0; padding-left:20px; color:var(--muted); }
 .check-list li { padding:5px 0; }
