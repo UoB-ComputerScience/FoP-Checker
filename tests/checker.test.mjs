@@ -226,6 +226,8 @@ async function codeFindings(prefix,change=()=>{}) {
 }
 const availability=change=>codeFindings('fop.availability',change);
 const syntax=change=>codeFindings('java.syntax',change);
+const filename=change=>codeFindings('java.filename',change);
+const duplicate=change=>codeFindings('java.duplicate',change);
 
 test('code matching the availability catalogue passes',async()=>{
   const found=await availability();
@@ -286,6 +288,50 @@ test('a syntax error is reported with its file and line, without calling its cod
   assert.equal((await availability(broken))['fop.availability'].status,'pass');
   // An item that cannot be found in that file is left to the syntax finding.
   assert.deepEqual(await availability(sources=>{broken(sources);swap('GameEngine','void movePlayer(','void walk(')(sources);}),{});
+});
+test('a public class in a file of another name is critical',async()=>{
+  assert.deepEqual(await filename(),{});
+  const rename=(from,to)=>sources=>{sources.set(to,sources.get(from));sources.delete(from);};
+  const found=await filename(rename('Player','player'));
+  assert.equal(found['java.filename'].status,'error');
+  assert.deepEqual(found['java.filename'].paths,['src/uk/ac/bradford/farmgame/player.java (public class Player, line 2)']);
+  assert.deepEqual((await filename(swap('Rock','public class Rock','public class Stone')))['java.filename'].paths,['src/uk/ac/bradford/farmgame/Rock.java (public class Stone, line 2)']);
+  const allowed=[
+    swap('Rock','public class Rock','class Stone'),
+    sources=>sources.set('Rock',sources.get('Rock')+'class Pebble {}\ninterface Hard {}\n'),
+    sources=>sources.set('Rock',sources.get('Rock').replace(/}\s*$/,'public static class Pebble {}\npublic enum Size { SMALL }\n}\n')),
+    // A file with a syntax error is reported by the syntax check alone.
+    sources=>{rename('Player','player')(sources);sources.set('player',sources.get('player').replace('getHeldItem() {}','getHeldItem() { int x = ; }'));},
+  ];
+  for(const [index,change] of allowed.entries()) assert.deepEqual(await filename(change),{},'case '+index);
+});
+test('a method or constructor written twice is critical, and overloads are not',async()=>{
+  assert.deepEqual(await duplicate(),{});
+  const add=(type,code)=>swap(type,'public Player(int p0, int p1) {}','public Player(int p0, int p1) {}\n'+code);
+  const line=catalogueSources().get('Player').split('\n').findIndex(l=>l.includes('Player(int p0, int p1)'))+1;
+  const at=(signature,...offsets)=>`src/uk/ac/bradford/farmgame/Player.java: ${signature} (lines ${offsets.slice(0,-1).map(o=>line+o).join(', ')} and ${line+offsets.at(-1)})`;
+  const cases=[
+    ['void m(int a) {}\nvoid m(int b) { a(); }',at('m(int)',1,2)],
+    ['public Player(final int x, int   y) {}',at('Player(int, int)',0,1)],
+    ['void m(int[] a) {}\nvoid m(int... a) {}\nprivate static int m(int a[]) { return 0; }',at('m(int[])',1,2,3)],
+    ['void m(java.util.List<String> a, Tile[][] b) {}\nvoid other() {}\nvoid m(java.util.List<String> c, Tile d[][]) {}',at('m(java.util.List<String>, Tile[][])',1,3)],
+  ];
+  for(const [code,expected] of cases) {
+    const found=await duplicate(add('Player',code));
+    assert.equal(found['java.duplicate'].status,'error',code);
+    assert.deepEqual(found['java.duplicate'].paths,[expected]);
+    assert.equal(found['java.duplicate'].list,'method');
+  }
+  // Each of these compiles.
+  const valid=['void m(int a) {}\nvoid m(String a) {}\nvoid m(int a, int b) {}\nvoid m() {}',
+    'void Player(int a, int b) {}',
+    '<T extends Number> void g(T a) {}\n<T extends CharSequence> void g(T a) {}',
+    'Runnable r = new Runnable() { public void run() {} };\npublic void run() {}',
+    'class Inner { void m(int a) {} }\nvoid m(int a) {}\nstatic class Other { void m(int a) {} }',
+    'void m(int a) {}\nvoid m(Integer a) {}\nvoid m(int[] a) {}\nvoid m(int[][] a) {}'];
+  for(const code of valid) assert.deepEqual(await duplicate(add('Player',code)),{},code);
+  // A file with a syntax error is reported by the syntax check alone.
+  assert.deepEqual(await duplicate(add('Player','void m() {}\nvoid m() { int x = ; }')),{});
 });
 test('common syntax mistakes are caught and valid modern Java is not',async()=>{
   const method=body=>swap('Player','public Player(int p0, int p1) {}','public Player(int p0, int p1) {}\n'+body);

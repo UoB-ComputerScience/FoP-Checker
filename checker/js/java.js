@@ -33,22 +33,23 @@ function parameters(node) {
 function readType(node,outer,path,incomplete,types) {
   const name=node.childForFieldName('name')?.text;
   if(!name) return;
-  const type={name:outer?`${outer}.${name}`:name,kind:KINDS[node.type],modifiers:modifiers(node),path,incomplete,
+  const type={name:outer?`${outer}.${name}`:name,kind:KINDS[node.type],modifiers:modifiers(node),path,incomplete,top:!outer,line:node.startPosition.row+1,
     extends:null,fields:new Map(),methods:[],constructors:[],constants:[]};
   const superclass=node.childForFieldName('superclass')?.namedChildren[0];
   if(superclass) type.extends=compact(superclass);
   types.push(type);
   const read=container=>{
     for(const member of container?.namedChildren??[]) {
+      const placed={line:member.startPosition.row+1,generic:member.namedChildren.some(c=>c.type==='type_parameters')};
       if(member.type==='field_declaration') {
         for(const declarator of member.childrenForFieldName('declarator')) {
           const field=declarator.childForFieldName('name')?.text;
           if(field) type.fields.set(field,{type:typeName(member.childForFieldName('type'),dimensions(declarator.childForFieldName('dimensions'))),modifiers:modifiers(member)});
         }
       } else if(member.type==='method_declaration') {
-        type.methods.push({name:member.childForFieldName('name')?.text,parameters:parameters(member),modifiers:modifiers(member),
+        type.methods.push({...placed,name:member.childForFieldName('name')?.text,parameters:parameters(member),modifiers:modifiers(member),
           returns:typeName(member.childForFieldName('type'),dimensions(member.childForFieldName('dimensions')))});
-      } else if(member.type==='constructor_declaration') type.constructors.push({parameters:parameters(member),modifiers:modifiers(member)});
+      } else if(member.type==='constructor_declaration') type.constructors.push({...placed,name,parameters:parameters(member),modifiers:modifiers(member)});
       else if(member.type==='enum_constant') type.constants.push(member.childForFieldName('name')?.text);
       else if(member.type==='enum_body_declarations') read(member);
       else if(KINDS[member.type]) readType(member,type.name,path,incomplete,types);

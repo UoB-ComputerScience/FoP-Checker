@@ -4,6 +4,6 @@
 // add 'fop.files', 'fop.availability' and 'fop.starter' to checks.
 export default {
   id:'diver-26-27',
-  checks:['java.sources','archive.extras','netbeans.project','java.syntax','submission.report'],
+  checks:['java.sources','archive.extras','netbeans.project','java.syntax','java.declarations','submission.report'],
   expectedProjectFiles:['build.xml','nbproject/project.xml','nbproject/project.properties','nbproject/build-impl.xml'],
 };

@@ -105,6 +105,28 @@ const checks={
     if(code.syntax.length) ctx.add('java.syntax.error',{},code.syntax.map(s=>`${s.path} (line ${s.line})`));
     else ctx.add('java.syntax.pass',{count:code.files,plural:code.files===1?'':'s'});
   },
+  // Mistakes that are valid syntax but can never compile.
+  'java.declarations': async ctx=>{
+    if(ctx.root===undefined) return;
+    const code=await javaCode(ctx);
+    if(!code) return;
+    // A file with a syntax error is left to the syntax check.
+    const types=code.types.filter(t=>!t.incomplete);
+    const misplaced=types.filter(t=>t.top&&t.modifiers.includes('public')&&!t.path.endsWith('/'+t.name+'.java')&&t.path!==t.name+'.java');
+    if(misplaced.length) ctx.add('java.filename.error',{},misplaced.map(t=>`${t.path} (public ${t.kind} ${t.name}, line ${t.line})`));
+    const repeated=[];
+    for(const type of types) for(const members of [type.constructors,type.methods]) {
+      const lines=new Map();
+      // Only parameter types written identically count, and not methods with their own
+      // type parameters: those can differ in ways the text does not show.
+      for(const member of members) if(!member.generic) {
+        const signature=`${member.name}(${member.parameters.join(', ')})`;
+        lines.set(signature,[...lines.get(signature)??[],member.line]);
+      }
+      for(const [signature,found] of lines) if(found.length>1) repeated.push(`${type.path}: ${signature} (lines ${found.slice(0,-1).join(', ')} and ${found.at(-1)})`);
+    }
+    if(repeated.length) ctx.add('java.duplicate.error',{},repeated);
+  },
   'fop.availability': async ctx=>{
     if(ctx.root===undefined) return;
     const code=await javaCode(ctx);

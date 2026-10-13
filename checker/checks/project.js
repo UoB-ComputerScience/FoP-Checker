@@ -206,13 +206,30 @@ export default {
     "purpose": "Catch code that cannot compile because of a syntax mistake, such as a missing bracket or semicolon.",
     "method": "Parse every Java file in the project's source folder. List a file, with the line where reading first failed, when it contains text that is not valid Java. This finds syntax mistakes only: nothing is compiled, so other compile errors are not detected."
   },
+  "java.filename.error": {
+    "id": "java.filename",
+    "status": "error",
+    "title": "Java file names: public class in the wrong file",
+    "message": "A public class must be in a file of the same name. Rename the listed files or classes in NetBeans.",
+    "purpose": "Catch code that cannot compile because a public class is not in a file named after it.",
+    "method": "Parse every Java file in the project's source folder. List each public class, interface, enum or record declared at the top of a file whose name, including upper and lower case, is not the class name followed by .java. Nested and non-public classes are ignored, as are files with a syntax error."
+  },
+  "java.duplicate.error": {
+    "id": "java.duplicate",
+    "status": "error",
+    "title": "Java methods: written twice",
+    "message": "Delete one copy of each listed method.",
+    "list": "method",
+    "purpose": "Catch code that cannot compile because a class declares the same method or constructor twice.",
+    "method": "Parse every Java file in the project's source folder. List a method or constructor when the same class declares another with the same name and identically written parameter types. Methods that differ in their parameter types are ignored, as are methods with their own type parameters and files with a syntax error."
+  },
   "java.code.info": {
     "id": "java.code",
     "status": "info",
     "title": "Java code: not checked",
     "message": "This browser could not run the code checks.",
     "purpose": "Say plainly when the code checks did not run, without failing the other checks.",
-    "method": "Shown once if the Java parser or availability.json cannot be loaded; the syntax and required code checks are then skipped."
+    "method": "Shown once if the Java parser or availability.json cannot be loaded; the code checks are then skipped."
   },
   "fop.starter.error": {
     "id": "fop.starter",
