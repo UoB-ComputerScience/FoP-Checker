@@ -193,8 +193,8 @@
     "expected_severity": "Pass",
     "check_complete": "Yes",
     "expected_heading": "No file issues found",
-    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": ""
   },
   {
@@ -204,8 +204,8 @@
     "expected_severity": "Advisory",
     "check_complete": "Yes",
     "expected_heading": "Check these items",
-    "expected_checks": "archive.integrity:pass; submission.extension:warning; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nAdvisory: ZIP filename: missing .zip extension — Add .zip to the filename.\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; submission.extension:warning; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nAdvisory: ZIP filename: missing .zip extension — Add .zip to the filename.\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": "Same ZIP bytes as example 01. Can be opened with a ZIP-aware reader; add .zip for normal filename association. Advisory only."
   },
   {
@@ -215,8 +215,8 @@
     "expected_severity": "Advisory",
     "check_complete": "Yes",
     "expected_heading": "Check these items",
-    "expected_checks": "archive.integrity:pass; submission.extension:warning; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nAdvisory: ZIP filename: missing .zip extension — Add .zip to the filename.\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; submission.extension:warning; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nAdvisory: ZIP filename: missing .zip extension — Add .zip to the filename.\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": "Same ZIP bytes as example 01. The ending word zip is not a .zip extension. Can be opened with a ZIP-aware reader; add the dot. Advisory only."
   },
   {
@@ -226,8 +226,8 @@
     "expected_severity": "Pass",
     "check_complete": "Yes",
     "expected_heading": "No file issues found",
-    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": ""
   },
   {
@@ -237,8 +237,8 @@
     "expected_severity": "Pass",
     "check_complete": "Yes",
     "expected_heading": "No file issues found",
-    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": ""
   },
   {
@@ -336,8 +336,8 @@
     "expected_severity": "Critical",
     "check_complete": "Yes",
     "expected_heading": "Files need attention",
-    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass; fop.starter:error",
-    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found\nCritical: Starter code: unchanged — Export the project containing your own work.",
+    "expected_checks": "archive.integrity:pass; java.sources:pass; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass; fop.starter:error",
+    "expected_messages": "Passed: ZIP integrity: 35 files verified\nPassed: Java source files: 10 found\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found\nCritical: Starter code: unchanged — Export the project containing your own work.",
     "notes": ""
   },
   {
@@ -347,8 +347,8 @@
     "expected_severity": "Advisory",
     "check_complete": "Yes",
     "expected_heading": "Check these items",
-    "expected_checks": "archive.integrity:pass; java.sources:pass; archive.backups:warning; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; fop.availability:pass",
-    "expected_messages": "Passed: ZIP integrity: 55 files verified\nPassed: Java source files: 10 found\nAdvisory: Backup files: found — Remove older copies if they are not needed.\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Required code: all 44 items found",
+    "expected_checks": "archive.integrity:pass; java.sources:pass; archive.backups:warning; netbeans.project:pass; netbeans.java-version:pass; fop.source-files:pass; fop.assets:pass; java.syntax:pass; fop.availability:pass",
+    "expected_messages": "Passed: ZIP integrity: 55 files verified\nPassed: Java source files: 10 found\nAdvisory: Backup files: found — Remove older copies if they are not needed.\nPassed: NetBeans project: build files and source folder checked\nPassed: Java version: 24 configured\nPassed: Starter source files: all 10 present\nPassed: Game images: all 20 present\nPassed: Java syntax: 10 files checked\nPassed: Required code: all 44 items found",
     "notes": ""
   },
   {

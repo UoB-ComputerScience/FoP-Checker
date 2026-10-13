@@ -57,17 +57,32 @@ function readType(node,outer,path,incomplete,types) {
   read(node.childForFieldName('body'));
 }
 
+// The first place in a file where the text stops being valid Java.
+function firstProblem(node) {
+  if(node.isError||node.isMissing) return node;
+  for(const child of node.children) {
+    const found=(child.hasError||child.isMissing)&&firstProblem(child);
+    if(found) return found;
+  }
+  return null;
+}
+
 // sources: [{path,text}]. A null text is a file that could not be decoded.
-// incomplete marks types from a file with syntax the parser could not follow.
+// incomplete marks types from a file with syntax the parser could not follow;
+// syntax lists those files with the line where reading first failed.
 export async function readDeclarations(sources) {
   const parser=await javaParser();
-  const result={types:[],unread:[]};
+  const result={types:[],unread:[],syntax:[],files:0};
   for(const {path,text} of sources) {
     const tree=text===null?null:parser.parse(text);
     if(!tree) {result.unread.push(path);continue;}
     try {
       const root=tree.rootNode,incomplete=root.hasError;
-      if(incomplete) result.unread.push(path);
+      result.files++;
+      if(incomplete) {
+        result.unread.push(path);
+        result.syntax.push({path,line:(firstProblem(root)??root).startPosition.row+1});
+      }
       const declaration=root.namedChildren.find(c=>c.type==='package_declaration');
       const packageName=declaration?compact(declaration.namedChildren.at(-1)):'';
       const types=[];

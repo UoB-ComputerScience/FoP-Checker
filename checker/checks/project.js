@@ -179,7 +179,7 @@ export default {
     "title": "Required code: all {count} items found",
     "message": "",
     "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
-    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored."
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
   },
   "fop.availability.warning": {
     "id": "fop.availability",
@@ -188,23 +188,31 @@ export default {
     "message": "Compare the listed items with the starter project.",
     "list": "item",
     "purpose": "Confirm that the classes, methods and attributes the coursework and its marking tests rely on are still present.",
-    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored."
+    "method": "Parse the Java source without compiling or running it, then compare declarations with the year's availability.json: kind, names, parameter types, return and attribute types, and extends. Inherited members count; access, static, final and extra code are ignored. Items in a file with a syntax error are not reported; the syntax check names that file."
   },
-  "fop.availability.info": {
-    "id": "fop.availability",
+  "java.syntax.error": {
+    "id": "java.syntax",
+    "status": "error",
+    "title": "Java syntax: errors found",
+    "message": "Fix the errors NetBeans shows in the listed files.",
+    "purpose": "Catch code that cannot compile because of a syntax mistake, such as a missing bracket or semicolon.",
+    "method": "Parse every Java file in the project's source folder. List a file, with the line where reading first failed, when it contains text that is not valid Java. This finds syntax mistakes only: nothing is compiled, so other compile errors are not detected."
+  },
+  "java.syntax.pass": {
+    "id": "java.syntax",
+    "status": "pass",
+    "title": "Java syntax: {count} file{plural} checked",
+    "message": "",
+    "purpose": "Catch code that cannot compile because of a syntax mistake, such as a missing bracket or semicolon.",
+    "method": "Parse every Java file in the project's source folder. List a file, with the line where reading first failed, when it contains text that is not valid Java. This finds syntax mistakes only: nothing is compiled, so other compile errors are not detected."
+  },
+  "java.code.info": {
+    "id": "java.code",
     "status": "info",
-    "title": "Required code: not checked",
-    "message": "This browser could not run the check.",
-    "purpose": "Say plainly when the code check did not run, without failing the other checks.",
-    "method": "Shown if the Java parser or availability.json cannot be loaded."
-  },
-  "fop.availability-files.warning": {
-    "id": "fop.availability-files",
-    "status": "warning",
-    "title": "Required code: files could not be read",
-    "message": "Open the listed files in NetBeans and check for errors.",
-    "purpose": "Avoid reporting code as missing when the file holding it could not be read reliably.",
-    "method": "List a file only when an expected item was not found as required and the parser met syntax it could not follow in that file, or the file is not UTF-8. Items from such files are not reported as missing or changed."
+    "title": "Java code: not checked",
+    "message": "This browser could not run the code checks.",
+    "purpose": "Say plainly when the code checks did not run, without failing the other checks.",
+    "method": "Shown once if the Java parser or availability.json cannot be loaded; the syntax and required code checks are then skipped."
   },
   "fop.starter.error": {
     "id": "fop.starter",

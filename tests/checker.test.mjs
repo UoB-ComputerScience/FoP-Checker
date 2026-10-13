@@ -227,12 +227,14 @@ const swap=(type,from,to)=>sources=>{
   assert.ok(sources.get(type).includes(from),from);
   sources.set(type,sources.get(type).replace(from,to));
 };
-async function availability(change=()=>{}) {
+async function codeFindings(prefix,change=()=>{}) {
   const sources=catalogueSources();change(sources);
   const project=entriesFor('').filter(([p])=>!p.endsWith('Main.java'));
   const report=await checkSubmission(await zip([...project,...[...sources].map(([name,text])=>[`src/uk/ac/bradford/farmgame/${name}.java`,text])]),'fop-2025-26');
-  return Object.fromEntries(report.findings.filter(f=>f.id.startsWith('fop.availability')).map(f=>[f.id,f]));
+  return Object.fromEntries(report.findings.filter(f=>f.id.startsWith(prefix)).map(f=>[f.id,f]));
 }
+const availability=change=>codeFindings('fop.availability',change);
+const syntax=change=>codeFindings('java.syntax',change);
 
 test('code matching the availability catalogue passes',async()=>{
   const found=await availability();
@@ -280,13 +282,31 @@ test('equivalent declarations, changed access, inheritance and extra code are ac
     assert.equal(found['fop.availability'].status,'pass','case '+index);
   }
 });
-test('a file the parser cannot follow is named instead of reporting its code as missing',async()=>{
+test('a syntax error is reported with its file and line, without calling its code missing',async()=>{
+  const clean=await syntax();
+  assert.equal(clean['java.syntax'].status,'pass');
+  assert.match(clean['java.syntax'].title,/^Java syntax: \d+ files checked$/);
   const broken=swap('GameEngine','public void growCrops() {}','public void growCrops() { int x = ; }');
-  // A syntax error alone hides nothing here, so every item is still found.
+  const line=catalogueSources().get('GameEngine').split('\n').findIndex(l=>l.includes('growCrops'))+1;
+  const found=await syntax(broken);
+  assert.equal(found['java.syntax'].status,'error');
+  assert.deepEqual(found['java.syntax'].paths,[`src/uk/ac/bradford/farmgame/GameEngine.java (line ${line})`]);
+  // A syntax error alone hides nothing here, so every required item is still found.
   assert.equal((await availability(broken))['fop.availability'].status,'pass');
-  const found=await availability(sources=>{broken(sources);swap('GameEngine','void movePlayer(','void walk(')(sources);});
-  assert.deepEqual(Object.keys(found),['fop.availability-files']);
-  assert.deepEqual(found['fop.availability-files'].paths,['src/uk/ac/bradford/farmgame/GameEngine.java']);
+  // An item that cannot be found in that file is left to the syntax finding.
+  assert.deepEqual(await availability(sources=>{broken(sources);swap('GameEngine','void movePlayer(','void walk(')(sources);}),{});
+});
+test('common syntax mistakes are caught and valid modern Java is not',async()=>{
+  const method=body=>swap('Player','public Player(int p0, int p1) {}','public Player(int p0, int p1) {}\n'+body);
+  const mistakes=['void m() { int x = 1 int y = 2; }','void m() { if (true) { int x = 1; }','void m() { if (true { int x = 1; } }',
+    'void m() { String s = "hello; }','void m() { int x = 1; else { x = 2; } }','pubic void m() { }','void m() { for (int i = 0; i < 3, i++) { } }'];
+  for(const mistake of mistakes) assert.equal((await syntax(method(mistake)))['java.syntax'].status,'error',mistake);
+  const valid=['record P(int x, int y) {} String g(Object o) { return switch (o) { case null -> "n"; case Integer i when i > 5 -> "big"; case P(int x, _) -> "p"; default -> "o"; }; }',
+    'int f(int k) { var y = switch (k) { case 1, 2 -> 10; default -> { yield 0; } }; String t = """\n  text "block"\n  """; return y + t.length(); }',
+    '<T extends Comparable<? super T>> T max(java.util.List<? extends T> items) { for (T _ : items) { } Runnable r = () -> {}; java.util.function.IntFunction<int[]> a = int[]::new; return null; }',
+    'enum Dir { UP(0, -1), LEFT(-1, 0) { @Override int cost() { return 2; } }; final int dx, dy; Dir(int dx, int dy) { this.dx = dx; this.dy = dy; } int cost() { return 1; } }',
+    'void flow() throws Exception { outer: for (int i = 0, j = 5; i < j; i++, j--) { if (i == 2) continue outer; } try (java.util.Scanner s = new java.util.Scanner("x")) { s.next(); } catch (IllegalStateException | IllegalArgumentException e) { } finally { } int[][] g = {{1, 2}, {3}}; long big = 1_000_000L + 0x1F + 0b10; }'];
+  for(const code of valid) assert.equal((await syntax(method(code)))['java.syntax'].status,'pass',code);
 });
 
 const fixtures=JSON.parse(await readFile(new URL('./fixtures.json',import.meta.url),'utf8'));
@@ -301,7 +321,7 @@ for(const fixture of fixtures.filter(c=>c.folder!=='Reports')) {
 test('full expectations reject missing, extra, duplicate and reclassified findings',()=>{
   const fixture=fixtures.find(c=>c.folder==='NetBeans-exports'&&c.file==='01-complete-project.zip');
   const findings=fixture.expected_checks.split(';').map(s=>{const [id,status]=s.trim().split(':');return {id,status};});
-  assert.equal(findings.length,7);
+  assert.equal(findings.length,8);
   const check=values=>assertExpected({complete:true,findings:values},fixture);
   check([...findings].reverse());
   for(const changed of [findings.slice(1),[...findings,{id:'unexpected',status:'pass'}],

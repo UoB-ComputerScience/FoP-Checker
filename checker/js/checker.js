@@ -37,6 +37,17 @@ async function readJson(url) {
   return response.json();
 }
 
+// The code checks share one reading of the Java files in the project's source folder.
+function javaCode(ctx) {
+  return ctx.java??=(async()=>{
+    try {
+      const java=[...ctx.files.values()].filter(f=>f.path.startsWith(ctx.root)&&f.path.endsWith('.java'));
+      const configured=java.filter(f=>f.path.startsWith(ctx.sourcePrefix??ctx.root+'src/'));
+      return await (await import('./java.js')).readDeclarations(configured.length?configured:java);
+    } catch {ctx.add('java.code.info');return null;}
+  })();
+}
+
 const checks={
   'java.sources': ({files,add})=>{
     const java=[...files.values()].filter(f=>f.path.endsWith('.java'));
@@ -86,19 +97,23 @@ const checks={
     if(assetsMissing.length) add('fop.assets.warning',{},assetsMissing);
     else add('fop.assets.pass');
   },
-  'fop.availability': async ({files,profile,root,sourcePrefix,add})=>{
-    if(root===undefined) return;
-    let catalogue,declared;
-    try {
-      const java=[...files.values()].filter(f=>f.path.startsWith(root)&&f.path.endsWith('.java'));
-      const configured=java.filter(f=>f.path.startsWith(sourcePrefix??root+'src/'));
-      catalogue=await readJson(profile.availability);
-      declared=await (await import('./java.js')).readDeclarations(configured.length?configured:java);
-    } catch {add('fop.availability.info');return;}
-    const {problems,compared,files:unread}=compareDeclarations(catalogue,declared.types,declared.unread);
-    if(unread.length) add('fop.availability-files.warning',{},unread);
-    if(problems.length) add('fop.availability.warning',{},problems);
-    else if(!unread.length) add('fop.availability.pass',{count:compared});
+  'java.syntax': async ctx=>{
+    if(ctx.root===undefined) return;
+    const code=await javaCode(ctx);
+    if(!code) return;
+    if(code.syntax.length) ctx.add('java.syntax.error',{},code.syntax.map(s=>`${s.path} (line ${s.line})`));
+    else ctx.add('java.syntax.pass',{count:code.files,plural:code.files===1?'':'s'});
+  },
+  'fop.availability': async ctx=>{
+    if(ctx.root===undefined) return;
+    const code=await javaCode(ctx);
+    if(!code) return;
+    let catalogue;
+    try {catalogue=await readJson(ctx.profile.availability);} catch {ctx.add('java.code.info');return;}
+    // Items in a file with a syntax error are left to the syntax check, which names the file.
+    const {problems,compared,files:doubtful}=compareDeclarations(catalogue,code.types,code.unread);
+    if(problems.length) ctx.add('fop.availability.warning',{},problems);
+    else if(!doubtful.length) ctx.add('fop.availability.pass',{count:compared});
   },
   'fop.starter': async ({files,profile,root,add})=>{
     if(root===undefined) return;

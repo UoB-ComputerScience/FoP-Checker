@@ -79,19 +79,5 @@
     {"id": "Rock", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Rock.java", "spec": "Task 12", "members": []},
     {"id": "Tree", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Tree.java", "spec": "Task 12", "members": []},
     {"id": "GameGUI", "kind": "class", "modifiers": ["public"], "starter": "GameGUI.java", "spec": "Task 3", "members": []}
-  ],
-  "tests": [
-    {
-      "ids": ["task1.player"],
-      "requires": ["GameEngine(GameGUI)", "GameEngine.createPlayer()", "GameEngine.player", "GameEngine.level", "Player", "Entity.getX()", "Entity.getY()", "Tile(Tile.TileType)", "Tile.getType()", "Tile.TileType.STONE_GROUND"]
-    },
-    {
-      "ids": ["task2.up", "task2.right", "task2.down", "task2.left"],
-      "requires": ["GameEngine(GameGUI)", "GameEngine.movePlayer(int)", "GameEngine.player", "GameEngine.level", "Player", "Player(int,int)", "Entity.getX()", "Entity.getY()", "Tile(Tile.TileType)", "Tile.getType()", "Tile.TileType.STONE_GROUND"]
-    },
-    {
-      "ids": ["task3.grid"],
-      "requires": ["GameEngine(GameGUI)", "GameEngine.generateFarm()", "GameEngine.level", "Tile", "Tile.getType()", "Tile.TileType"]
-    }
   ]
 }
