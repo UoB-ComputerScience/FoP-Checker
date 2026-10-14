@@ -8,7 +8,7 @@
   "scripts": {
     "dependencies": "node tools/dependencies.js",
     "build": "node tools/build.js",
-    "test": "node tools/dependencies.js && node --test --test-concurrency=1 tests/checker.test.mjs tests/site.test.mjs"
+    "test": "node tools/dependencies.js && node --test --test-concurrency=1 --experimental-test-coverage --test-coverage-exclude=checker/vendor/** --test-coverage-exclude=tests/** --test-coverage-exclude=tools/** tests/checker.test.mjs tests/site.test.mjs"
   },
   "dependencies": {
     "@zip.js/zip.js": "2.14.1",
