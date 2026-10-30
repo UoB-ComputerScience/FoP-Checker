@@ -120,18 +120,18 @@ export default {
   "netbeans.java-version.pass": {
     "id": "netbeans.java-version",
     "status": "pass",
-    "title": "Java version: {version} configured",
+    "title": "Java version: {version} or later",
     "message": "",
-    "purpose": "Identify settings that differ from the coursework Java environment.",
-    "method": "Compare javac.source, javac.target and optional javac.release with the profile Java version. This reads saved settings; it does not compile."
+    "purpose": "Identify a project set to an older Java version than the coursework uses.",
+    "method": "Read javac.source, javac.target and javac.release from nbproject/project.properties as Java reads properties files. Only a version below the profile's is advisory; a later version, a missing setting or a reference to another setting is accepted, as in the marker. This reads saved settings; it does not compile."
   },
   "netbeans.java-version.warning": {
     "id": "netbeans.java-version",
     "status": "warning",
-    "title": "Java version: expected {version}",
-    "message": "Found source={source}, target={target}{releaseSetting}.",
-    "purpose": "Identify settings that differ from the coursework Java environment.",
-    "method": "Compare javac.source, javac.target and optional javac.release with the profile Java version. This reads saved settings; it does not compile."
+    "title": "Java version: below {version}",
+    "message": "Found {settings}. In NetBeans, set Source/Binary Format to {version} or later under Project Properties, Sources.",
+    "purpose": "Identify a project set to an older Java version than the coursework uses.",
+    "method": "As for the pass: lists each setting whose version is below the profile's."
   },
   "fop.files.info": {
     "id": "fop.files",

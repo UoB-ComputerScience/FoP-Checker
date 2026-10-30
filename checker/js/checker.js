@@ -1,184 +1,344 @@
-import {makeFinding} from './findings.js';
-import {readArchive,ArchiveError} from './archive.js';
-import {getProfile} from './profiles.js';
-import {compareDeclarations} from './availability.js';
+// Checks a coursework ZIP. The archive is read first (archive.js); then each check the
+// coursework's profile lists runs in turn, adding findings. Nothing in the ZIP is run.
+import { makeFinding } from './findings.js';
+import { readArchive, ArchiveError } from './archive.js';
+import { getProfile } from './profiles.js';
+import { compareDeclarations } from './availability.js';
 
-export const normaliseText=text=>text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+// Removes a byte-order mark and makes every line ending \n, so a file saved on another system
+// still matches the starter's fingerprint.
+export const normaliseText = text => text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+
 export async function sha256(data) {
-  const bytes=typeof data==='string'?new TextEncoder().encode(data):data;
-  return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  return [...digest].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
-const ignored=path=>path.split('/').some(p=>p==='__MACOSX'||p==='.DS_Store'||p==='Thumbs.db'||p.startsWith('._'));
 
-export function detectRoots(paths,sourceMarker) {
-  const roots=new Set();
-  const endsWithPath=(path,marker)=>path===marker||path.endsWith('/'+marker);
-  for(const path of paths) {
-    for(const marker of ['nbproject/project.xml','nbproject/project.properties']) if(endsWithPath(path,marker)) roots.add(path.slice(0,-marker.length));
+// Files that macOS and Windows add to a ZIP, which are not part of the project.
+const isSystemFile = path =>
+  path
+    .split('/')
+    .some(
+      part => part === '__MACOSX' || part === '.DS_Store' || part === 'Thumbs.db' || part.startsWith('._'),
+    );
+
+// The folders in the ZIP that hold a NetBeans project, each ending in '/' ('' for the ZIP's root).
+// Found by its nbproject files, otherwise by build.xml, otherwise by the coursework's sourceMarker.
+export function detectRoots(paths, sourceMarker) {
+  const endsWithPath = (path, marker) => path === marker || path.endsWith('/' + marker);
+  const rootsBy = isMarker => {
+    const roots = new Set();
+    for (const path of paths) {
+      const marker = isMarker(path);
+      if (marker) roots.add(path.slice(0, -marker.length));
+    }
+    return roots;
+  };
+  let roots = rootsBy(path =>
+    ['nbproject/project.xml', 'nbproject/project.properties'].find(marker => endsWithPath(path, marker)),
+  );
+  if (!roots.size) {
+    roots = rootsBy(path =>
+      endsWithPath(path, 'build.xml') && !endsWithPath(path, 'nbproject/build.xml') ? 'build.xml' : null,
+    );
   }
-  if(!roots.size) for(const path of paths) if(endsWithPath(path,'build.xml') && !endsWithPath(path,'nbproject/build.xml')) roots.add(path.slice(0,-'build.xml'.length));
-  if(!roots.size&&sourceMarker) for(const path of paths) if(endsWithPath(path,sourceMarker)) roots.add(path.slice(0,-sourceMarker.length));
+  if (!roots.size && sourceMarker) {
+    roots = rootsBy(path => (endsWithPath(path, sourceMarker) ? sourceMarker : null));
+  }
   return [...roots].sort();
 }
 
-// This deliberately recognises simple Java properties only. Unknown expressions
-// remain advisory instead of guessing what the student's build would do.
-function property(text,key) {
-  if(!text) return undefined;
-  const line=text.split(/\r?\n/).filter(l=>l.trim().startsWith(`${key}=`)||l.trim().startsWith(`${key} =`)).at(-1);
-  return line?.slice(line.indexOf('=')+1).trim();
+// The value of a key in a Java properties file, the last one if repeated. As in Java, the key
+// is followed by '=', ':' or white space. Escapes and lines continued with \ are not followed:
+// NetBeans does not write them for these settings.
+function property(text, key) {
+  if (!text) return undefined;
+  const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`^\\s*${escaped}(?:\\s*[=:]\\s*|\\s+)(.*)$`);
+  let value;
+  for (const line of text.split(/\r?\n/)) {
+    const match = pattern.exec(line);
+    if (match) value = match[1].trim();
+  }
+  return value;
+}
+
+// A Java version as NetBeans writes it: 24, or 1.8 for Java 8. Null for anything else, such
+// as a reference to another setting.
+function javaVersionOf(value) {
+  const match = /^(?:1\.)?(\d+)$/.exec(value ?? '');
+  return match ? Number(match[1]) : null;
 }
 
 // A coursework's availability list is plain data, kept apart from the checks that read it.
+// The tests run in Node, where it is read from disk.
 async function readJson(url) {
-  if(url.protocol==='file:') return JSON.parse(await (await import('node:fs/promises')).readFile(url,'utf8'));
-  const response=await fetch(url);
-  if(!response.ok) throw new Error('Catalogue not found.');
+  if (url.protocol === 'file:') {
+    const { readFile } = await import('node:fs/promises');
+    return JSON.parse(await readFile(url, 'utf8'));
+  }
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Catalogue not found.');
   return response.json();
 }
 
-// The code checks share one reading of the Java files in the project's source folder.
-function javaCode(ctx) {
-  return ctx.java??=(async()=>{
+// The code checks share one reading of the Java files in the project's source folder,
+// or in the whole project if the source folder has none.
+function javaCode(context) {
+  context.java ??= (async () => {
     try {
-      const java=[...ctx.files.values()].filter(f=>f.path.startsWith(ctx.root)&&f.path.endsWith('.java'));
-      const configured=java.filter(f=>f.path.startsWith(ctx.sourcePrefix??ctx.root+'src/'));
-      return await (await import('./java.js')).readDeclarations(configured.length?configured:java);
-    } catch {ctx.add('java.code.info');return null;}
+      const java = [...context.files.values()].filter(
+        file => file.path.startsWith(context.root) && file.path.endsWith('.java'),
+      );
+      const sourcePrefix = context.sourcePrefix ?? context.root + 'src/';
+      const inSourceFolder = java.filter(file => file.path.startsWith(sourcePrefix));
+      const { readDeclarations } = await import('./java.js');
+      return await readDeclarations(inSourceFolder.length ? inSourceFolder : java);
+    } catch {
+      context.add('java.code.info');
+      return null;
+    }
   })();
+  return context.java;
 }
 
-const checks={
-  'java.sources': ({files,add})=>{
-    const java=[...files.values()].filter(f=>f.path.endsWith('.java'));
-    if(!java.length) {add('java.sources.error');return;}
-    add('java.sources.pass',{count:java.length,plural:java.length===1?'':'s'});
-    const empty=java.filter(f=>f.size===0||(f.text!==null&&!f.text.trim())).map(f=>f.path);
-    if(empty.length) add('java.empty.warning',{},empty);
-    const encoding=java.filter(f=>f.invalidEncoding).map(f=>f.path);
-    if(encoding.length) add('java.encoding.warning',{},encoding);
-  },
-  'archive.extras': ({files,archive,add})=>{
-    const paths=[...files.keys()];
-    const zips=paths.filter(p=>/\.(zip|7z|rar|tar|gz)$/i.test(p));
-    if(zips.length) add('archive.nested.warning',{},zips);
-    const generated=paths.filter(p=>/(^|\/)(\.git|node_modules|target)(\/|$)/.test(p)||/\.log$/i.test(p));
-    if(generated.length) add('archive.generated.warning',{},generated);
-    const backups=paths.filter(p=>/\.(bak|old|tmp)$|~$/i.test(p));
-    if(backups.length) add('archive.backups.warning',{},backups);
-    if(archive.portability.length) add('archive.portability.warning',{},archive.portability);
-  },
-  'netbeans.project': ctx=>{
-    const {files,profile,add}=ctx;
-    const roots=detectRoots([...files.keys()],profile.rootMarker);
-    if(!roots.length) {add('netbeans.project.warning');return;}
-    if(roots.length>1) {add('netbeans.project.warning.2',{},roots.map(r=>r||'(ZIP root)'));return;}
-    ctx.root=roots[0];
-    const missing=profile.expectedProjectFiles.filter(p=>!files.has(ctx.root+p));
-    if(missing.length) add('netbeans.files.warning',{},missing);
-    const config=files.get(ctx.root+'nbproject/project.properties')?.text;
-    const src=property(config,'src.dir');
-    if(src&&/^[\w./ -]+$/.test(src)&&!src.startsWith('/')&&!src.split('/').includes('..')) {
-      const segments=src.split('/').filter(s=>s&&s!=='.');
-      const prefix=ctx.root+(segments.length?segments.join('/')+'/':'');
-      if(![...files.keys()].some(p=>p.startsWith(prefix)&&p.endsWith('.java'))) add('netbeans.source-path.error',{folder:src});
-      else {ctx.sourcePrefix=prefix;if(!missing.length) add('netbeans.project.pass');}
-    } else add('netbeans.source-path.info');
-    const source=property(config,'javac.source'), target=property(config,'javac.target'), release=property(config,'javac.release');
-    if(!profile.javaVersion) return;
-    if(source===profile.javaVersion&&target===profile.javaVersion&&(!release||release===profile.javaVersion)) add('netbeans.java-version.pass',{version:profile.javaVersion});
-    else add('netbeans.java-version.warning',{version:profile.javaVersion,source:source||'not set',target:target||'not set',releaseSetting:release?`, release=${release}`:''});
-  },
-  'fop.files': ({files,profile,root,add})=>{
-    if(root===undefined) {add('fop.files.info');return;}
-    const sourceMissing=profile.expectedSourceFiles.filter(p=>!files.has(root+p));
-    if(sourceMissing.length) add('fop.source-files.warning',{},sourceMissing);
-    else add('fop.source-files.pass',{count:profile.expectedSourceFiles.length});
-    const assetsMissing=profile.assets.filter(p=>!files.has(root+p));
-    if(assetsMissing.length) add('fop.assets.warning',{},assetsMissing);
-    else add('fop.assets.pass',{count:profile.assets.length});
-  },
-  'java.syntax': async ctx=>{
-    if(ctx.root===undefined) return;
-    const code=await javaCode(ctx);
-    if(!code) return;
-    if(code.syntax.length) ctx.add('java.syntax.error',{},code.syntax.map(s=>`${s.path} (line ${s.line})`));
-    else ctx.add('java.syntax.pass',{count:code.files,plural:code.files===1?'':'s'});
-  },
-  // Mistakes that are valid syntax but can never compile.
-  'java.declarations': async ctx=>{
-    if(ctx.root===undefined) return;
-    const code=await javaCode(ctx);
-    if(!code) return;
-    // A file with a syntax error is left to the syntax check.
-    const types=code.types.filter(t=>!t.incomplete);
-    const misplaced=types.filter(t=>t.top&&t.modifiers.includes('public')&&!t.path.endsWith('/'+t.name+'.java')&&t.path!==t.name+'.java');
-    if(misplaced.length) ctx.add('java.filename.error',{},misplaced.map(t=>`${t.path} (public ${t.kind} ${t.name}, line ${t.line})`));
-    const repeated=[];
-    for(const type of types) for(const members of [type.constructors,type.methods]) {
-      const lines=new Map();
-      // Only parameter types written identically count, and not methods with their own
-      // type parameters: those can differ in ways the text does not show.
-      for(const member of members) if(!member.generic) {
-        const signature=`${member.name}(${member.parameters.join(', ')})`;
-        lines.set(signature,[...lines.get(signature)??[],member.line]);
-      }
-      for(const [signature,found] of lines) if(found.length>1) repeated.push(`${type.path}: ${signature} (lines ${found.slice(0,-1).join(', ')} and ${found.at(-1)})`);
+// The project's source folder, from src.dir. Only a plain relative folder is followed;
+// anything else, such as ${a.property}, is left as a note.
+function checkSourceFolder(context, folder, projectFilesPresent) {
+  const { files, root, add } = context;
+  const plainFolder =
+    folder && /^[\w./ -]+$/.test(folder) && !folder.startsWith('/') && !folder.split('/').includes('..');
+  if (!plainFolder) {
+    add('netbeans.source-path.info');
+    return;
+  }
+  const segments = folder.split('/').filter(segment => segment && segment !== '.');
+  const prefix = root + (segments.length ? segments.join('/') + '/' : '');
+  if (![...files.keys()].some(path => path.startsWith(prefix) && path.endsWith('.java'))) {
+    add('netbeans.source-path.error', { folder });
+    return;
+  }
+  context.sourcePrefix = prefix;
+  if (projectFilesPresent) add('netbeans.project.pass');
+}
+
+// Advisory when the project is set to a Java version below the coursework's. A later version is
+// fine, and so is a setting that is missing or refers to another setting, as in the marker. A
+// project with no readable settings file is left to the project files check.
+function checkJavaVersion({ profile, add }, settings) {
+  const version = Number(profile.javaVersion);
+  if (!version || settings == null) return;
+  const below = [];
+  for (const key of ['javac.source', 'javac.target', 'javac.release']) {
+    const value = property(settings, key);
+    const found = javaVersionOf(value);
+    if (found !== null && found < version) below.push(`${key}=${value}`);
+  }
+  if (below.length) add('netbeans.java-version.warning', { version, settings: below.join(', ') });
+  else add('netbeans.java-version.pass', { version });
+}
+
+// Each check reads the context and adds its findings. netbeans.project also sets context.root,
+// which the checks after it need; they are skipped when no single project was found.
+const checks = {
+  'java.sources': ({ files, add }) => {
+    const java = [...files.values()].filter(file => file.path.endsWith('.java'));
+    if (!java.length) {
+      add('java.sources.error');
+      return;
     }
-    if(repeated.length) ctx.add('java.duplicate.error',{},repeated);
+    add('java.sources.pass', { count: java.length });
+    const empty = java.filter(file => file.size === 0 || (file.text !== null && !file.text.trim()));
+    if (empty.length)
+      add(
+        'java.empty.warning',
+        {},
+        empty.map(file => file.path),
+      );
+    const unreadable = java.filter(file => file.invalidEncoding);
+    if (unreadable.length)
+      add(
+        'java.encoding.warning',
+        {},
+        unreadable.map(file => file.path),
+      );
   },
-  'fop.availability': async ctx=>{
-    if(ctx.root===undefined) return;
-    const code=await javaCode(ctx);
-    if(!code) return;
+
+  'archive.extras': ({ files, archive, add }) => {
+    const paths = [...files.keys()];
+    const archives = paths.filter(path => /\.(zip|7z|rar|tar|gz)$/i.test(path));
+    if (archives.length) add('archive.nested.warning', {}, archives);
+    const generated = paths.filter(
+      path => /(^|\/)(\.git|node_modules|target)(\/|$)/.test(path) || /\.log$/i.test(path),
+    );
+    if (generated.length) add('archive.generated.warning', {}, generated);
+    const backups = paths.filter(path => /\.(bak|old|tmp)$|~$/i.test(path));
+    if (backups.length) add('archive.backups.warning', {}, backups);
+    if (archive.portability.length) add('archive.portability.warning', {}, archive.portability);
+  },
+
+  'netbeans.project': context => {
+    const { files, profile, add } = context;
+    const roots = detectRoots([...files.keys()], profile.rootMarker);
+    if (!roots.length) {
+      add('netbeans.project.warning');
+      return;
+    }
+    if (roots.length > 1) {
+      add(
+        'netbeans.project.warning.2',
+        {},
+        roots.map(root => root || '(ZIP root)'),
+      );
+      return;
+    }
+    context.root = roots[0];
+    const missing = profile.expectedProjectFiles.filter(path => !files.has(context.root + path));
+    if (missing.length) add('netbeans.files.warning', {}, missing);
+    const settings = files.get(context.root + 'nbproject/project.properties')?.text;
+    checkSourceFolder(context, property(settings, 'src.dir'), missing.length === 0);
+    checkJavaVersion(context, settings);
+  },
+
+  'fop.files': ({ files, profile, root, add }) => {
+    if (root === undefined) {
+      add('fop.files.info');
+      return;
+    }
+    const sourcesMissing = profile.expectedSourceFiles.filter(path => !files.has(root + path));
+    if (sourcesMissing.length) add('fop.source-files.warning', {}, sourcesMissing);
+    else add('fop.source-files.pass', { count: profile.expectedSourceFiles.length });
+    const assetsMissing = profile.assets.filter(path => !files.has(root + path));
+    if (assetsMissing.length) add('fop.assets.warning', {}, assetsMissing);
+    else add('fop.assets.pass', { count: profile.assets.length });
+  },
+
+  'java.syntax': async context => {
+    if (context.root === undefined) return;
+    const code = await javaCode(context);
+    if (!code) return;
+    if (code.syntax.length) {
+      context.add(
+        'java.syntax.error',
+        {},
+        code.syntax.map(problem => `${problem.path} (line ${problem.line})`),
+      );
+    } else {
+      context.add('java.syntax.pass', { count: code.files, plural: code.files === 1 ? '' : 's' });
+    }
+  },
+
+  // Mistakes that are valid syntax but can never compile.
+  'java.declarations': async context => {
+    if (context.root === undefined) return;
+    const code = await javaCode(context);
+    if (!code) return;
+    // A file with a syntax error is left to the syntax check.
+    const types = code.types.filter(type => !type.incomplete);
+
+    const inWrongFile = type =>
+      type.top &&
+      type.modifiers.includes('public') &&
+      !type.path.endsWith('/' + type.name + '.java') &&
+      type.path !== type.name + '.java';
+    const misplaced = types.filter(inWrongFile);
+    if (misplaced.length) {
+      const describe = type => `${type.path} (public ${type.kind} ${type.name}, line ${type.line})`;
+      context.add('java.filename.error', {}, misplaced.map(describe));
+    }
+
+    const repeated = [];
+    for (const type of types) {
+      for (const members of [type.constructors, type.methods]) {
+        const linesBySignature = new Map();
+        // Only parameter types written identically count, and not methods with their own
+        // type parameters: those can differ in ways the text does not show.
+        for (const member of members) {
+          if (member.generic) continue;
+          const signature = `${member.name}(${member.parameters.join(', ')})`;
+          linesBySignature.set(signature, [...(linesBySignature.get(signature) ?? []), member.line]);
+        }
+        for (const [signature, lines] of linesBySignature) {
+          if (lines.length < 2) continue;
+          repeated.push(
+            `${type.path}: ${signature} (lines ${lines.slice(0, -1).join(', ')} and ${lines.at(-1)})`,
+          );
+        }
+      }
+    }
+    if (repeated.length) context.add('java.duplicate.error', {}, repeated);
+  },
+
+  'fop.availability': async context => {
+    if (context.root === undefined) return;
+    const code = await javaCode(context);
+    if (!code) return;
     let catalogue;
-    try {catalogue=await readJson(ctx.profile.availability);} catch {ctx.add('java.code.info');return;}
+    try {
+      catalogue = await readJson(context.profile.availability);
+    } catch {
+      context.add('java.code.info');
+      return;
+    }
     // Items in a file with a syntax error are left to the syntax check, which names the file.
-    const {problems,compared,files:doubtful}=compareDeclarations(catalogue,code.types,code.unread);
-    if(problems.length) ctx.add('fop.availability.warning',{},problems);
-    else if(!doubtful.length) ctx.add('fop.availability.pass',{count:compared});
+    const { problems, compared, files: doubtful } = compareDeclarations(catalogue, code.types, code.unread);
+    if (problems.length) context.add('fop.availability.warning', {}, problems);
+    else if (!doubtful.length) context.add('fop.availability.pass', { count: compared });
   },
-  'fop.starter': async ({files,profile,root,add})=>{
-    if(root===undefined) return;
-    const originals=profile.expectedSourceFiles;
-    const java=[...files.values()].filter(f=>f.path.startsWith(root)&&f.path.endsWith('.java'));
-    if(java.length!==originals.length) return;
-    for(const path of originals) {
-      const text=files.get(root+path)?.text;
-      if(text==null||await sha256(normaliseText(text))!==profile.starter[path]) return;
+
+  // Critical only when the project's Java files are exactly the starter's, unchanged.
+  'fop.starter': async ({ files, profile, root, add }) => {
+    if (root === undefined) return;
+    const originals = profile.expectedSourceFiles;
+    const java = [...files.values()].filter(
+      file => file.path.startsWith(root) && file.path.endsWith('.java'),
+    );
+    if (java.length !== originals.length) return;
+    for (const path of originals) {
+      const text = files.get(root + path)?.text;
+      if (text == null || (await sha256(normaliseText(text))) !== profile.starter[path]) return;
     }
     add('fop.starter.error');
   },
-  'submission.report': ({files,add})=>{
-    const reports=[...files.keys()].filter(p=>/\.(docx?|odt|pdf)$/i.test(p));
-    if(reports.length) add('submission.report.warning',{},reports);
+
+  'submission.report': ({ files, add }) => {
+    const reports = [...files.keys()].filter(path => /\.(docx?|odt|pdf)$/i.test(path));
+    if (reports.length) add('submission.report.warning', {}, reports);
   },
 };
 
-export async function inspectProject(archive,profile) {
-  const findings=[];
-  const context={archive,profile,files:new Map([...archive.files].filter(([p])=>!ignored(p))),add:(...args)=>findings.push(makeFinding(...args))};
-  for(const id of profile.checks) {
-    if(!checks[id]) throw new Error(`Unknown check: ${id}`);
+// Runs the profile's checks on an archive that has been read. Returns the findings.
+export async function inspectProject(archive, profile) {
+  const findings = [];
+  const context = {
+    archive,
+    profile,
+    files: new Map([...archive.files].filter(([path]) => !isSystemFile(path))),
+    add: (...args) => findings.push(makeFinding(...args)),
+  };
+  for (const id of profile.checks) {
+    if (!checks[id]) throw new Error(`Unknown check: ${id}`);
     await checks[id](context);
   }
   return findings;
 }
 
-export async function checkSubmission(blob,profileId,options={}) {
-  const profile=getProfile(profileId);
-  const report={findings:[],files:[],complete:false};
+// complete is false when the archive could not be read, so the project checks did not run.
+export async function checkSubmission(blob, profileId, options = {}) {
+  const profile = getProfile(profileId);
+  const report = { findings: [], files: [], complete: false };
   try {
-    const archive=await readArchive(blob,options);
-    report.files=[...archive.files.values()].map(({path,size})=>({path,size}));
-    report.findings.push(makeFinding('archive.integrity.pass',{count:archive.files.size}));
-    if(blob.name && !/\.zip$/i.test(blob.name)) report.findings.push(makeFinding('submission.extension.warning'));
-    report.findings.push(...await inspectProject(archive,profile));
-    report.complete=true;
-  } catch(error) {
-    if(!(error instanceof ArchiveError)) throw error;
-    const status=['archive.limit','archive.timeout','archive.format'].includes(error.id)?'warning':'error';
-    report.findings.push(error.finding||{id:error.id,status,title:makeFinding('archive.unreadable.error').title,message:error.message,paths:error.paths});
+    const archive = await readArchive(blob, options);
+    report.files = [...archive.files.values()].map(({ path, size }) => ({ path, size }));
+    report.findings.push(makeFinding('archive.integrity.pass', { count: archive.files.size }));
+    if (blob.name && !/\.zip$/i.test(blob.name))
+      report.findings.push(makeFinding('submission.extension.warning'));
+    report.findings.push(...(await inspectProject(archive, profile)));
+    report.complete = true;
+  } catch (error) {
+    if (!(error instanceof ArchiveError)) throw error;
+    report.findings.push(error.finding);
   }
   return report;
 }

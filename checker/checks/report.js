@@ -151,7 +151,7 @@ export default {
   "report.readable.pass.2": {
     "id": "report.readable",
     "status": "pass",
-    "title": "PDF readability: {pages} pages checked",
+    "title": "PDF readability: {pages} page{plural} checked",
     "message": "",
     "purpose": "Confirm document structure or PDF page data can be read.",
     "method": "DOCX/ODT: verify the package, main body and referenced parts. PDF: load every page and extract text while checking parser failures. Page appearance is not assessed."
