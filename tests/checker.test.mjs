@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { ZipWriter, Uint8ArrayWriter, Uint8ArrayReader, TextReader } from '../checker/vendor/zip.js';
+import { zip, catalogueSources, readCatalogue } from './helpers.mjs';
 import {
   checkSubmission,
   detectRoots,
@@ -12,16 +12,6 @@ import {
 import { inspectMetadata, ArchiveError } from '../checker/js/archive.js';
 import { getProfile, COURSEWORKS, LIMITS } from '../checker/js/profiles.js';
 
-async function zip(entries, options = {}) {
-  const writer = new Uint8ArrayWriter();
-  const zip = new ZipWriter(writer, { useWebWorkers: false, level: 0, ...options });
-  for (const [name, content] of entries)
-    await zip.add(
-      name,
-      content instanceof Uint8Array ? new Uint8ArrayReader(content) : new TextReader(content),
-    );
-  return new File([await zip.close()], 'coursework.zip', { type: 'application/zip' });
-}
 const has = (report, id, status) =>
   report.findings.some(f => f.id === id && (!status || f.status === status));
 const entriesFor = root => [
@@ -388,34 +378,7 @@ test('ZIP contents are checked despite a misleading Java filename', async () => 
   assert.ok(has(result, 'submission.extension', 'warning'));
 });
 
-const readCatalogue = async id =>
-  JSON.parse(await readFile(new URL(`../${id}/availability.json`, import.meta.url), 'utf8'));
 const farmCatalogue = await readCatalogue('farm-25-26');
-// Declarations only, written from the catalogue, so no starter code is published here.
-function catalogueSources(catalogue = farmCatalogue) {
-  const declare = type => {
-    const name = type.id.split('.').at(-1);
-    const constants = type.members.filter(m => m.kind === 'constant').map(m => m.name);
-    const members = type.members
-      .filter(m => m.kind !== 'constant')
-      .map(m => {
-        const modifiers = m.modifiers.join(' ');
-        if (m.kind === 'field') return `${modifiers} ${m.type} ${m.name};`;
-        const parameters = m.parameters.map((p, i) => `${p} p${i}`).join(', ');
-        return m.kind === 'method'
-          ? `${modifiers} ${m.returns} ${m.name}(${parameters}) {}`
-          : `${modifiers} ${name}(${parameters}) {}`;
-      });
-    const nested = catalogue.types.filter(t => t.nestedIn === type.id).map(declare);
-    const heading = `${type.modifiers.join(' ')} ${type.kind} ${name}${type.extends ? ' extends ' + type.extends : ''}${type.implements ? ' implements ' + type.implements.join(', ') : ''}`;
-    return `${heading} {\n${[constants.length ? constants.join(', ') + ';' : '', ...members, ...nested].filter(Boolean).join('\n')}\n}`;
-  };
-  return new Map(
-    catalogue.types
-      .filter(t => !t.nestedIn)
-      .map(t => [t.id, `package ${catalogue.package};\n${declare(t)}\n`]),
-  );
-}
 const swap = (type, from, to) => sources => {
   assert.ok(sources.get(type).includes(from), from);
   sources.set(type, sources.get(type).replace(from, to));
@@ -606,7 +569,7 @@ test('a syntax error is reported with its file and line, without calling its cod
   assert.match(clean['java.syntax'].title, /^Java syntax: \d+ files checked$/);
   const broken = swap('GameEngine', 'public void growCrops() {}', 'public void growCrops() { int x = ; }');
   const line =
-    catalogueSources()
+    catalogueSources(farmCatalogue)
       .get('GameEngine')
       .split('\n')
       .findIndex(l => l.includes('growCrops')) + 1;
@@ -665,7 +628,7 @@ test('a method or constructor written twice is critical, and overloads are not',
   const add = (type, code) =>
     swap(type, 'public Player(int p0, int p1) {}', 'public Player(int p0, int p1) {}\n' + code);
   const line =
-    catalogueSources()
+    catalogueSources(farmCatalogue)
       .get('Player')
       .split('\n')
       .findIndex(l => l.includes('Player(int p0, int p1)')) + 1;
