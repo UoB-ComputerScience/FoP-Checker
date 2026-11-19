@@ -237,7 +237,7 @@ export default {
     "title": "Starter code: unchanged",
     "message": "Export the project containing your own work.",
     "purpose": "Catch an untouched starter project.",
-    "method": "Require the original Java file count and compare each original path against a SHA-256 fingerprint after normalising line endings and a leading BOM. Comments or extra Java files avoid this exact-match finding; it does not measure meaningful completion."
+    "method": "Require the original Java file count and compare each original path against the SHA-256 fingerprint of that file in any starter release, after normalising line endings and a leading BOM. Comments or extra Java files avoid this exact-match finding; it does not measure meaningful completion."
   },
   "submission.report.warning": {
     "id": "submission.report",

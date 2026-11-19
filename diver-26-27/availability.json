@@ -1,0 +1,119 @@
+{
+  "id": "fop-2026-27",
+  "version": 1,
+  "package": "uk.ac.bradford.divegame",
+  "sources": {
+    "starter": "FoPCW2026-2.zip, src/uk/ac/bradford/divegame/",
+    "spec": "2026-27 FoP Coursework Specification v1.2"
+  },
+  "scope": [
+    "Every entry is declared in the starter; modifiers and types are the starter's.",
+    "Listed: the classes, methods and attributes that Tasks 1 to 14 tell students to complete, assign or use, plus the starter code that runs them each game and turn.",
+    "spec is the first task whose text refers to the entry. Entries without it are not named in Tasks 1 to 14 but run the code those tasks complete: startGame() sets up the game and doTurn() counts turns in turnNumber.",
+    "Not listed: the window, keyboard and launch code, Urchin, parameter names, and anything Tasks 1 to 14 do not ask students to write or use.",
+    "Compared: kind, names, parameter types, return and attribute types, and extends. A member inherited from a supertype satisfies its entry.",
+    "Not compared: access, static, final and abstract. Extra types, members and enum values are allowed."
+  ],
+  "types": [
+    {
+      "id": "GameEngine", "kind": "class", "modifiers": ["public"], "starter": "GameEngine.java", "spec": "Task 1",
+      "members": [
+        {"id": "GameEngine.LEVEL_WIDTH", "kind": "field", "name": "LEVEL_WIDTH", "type": "int", "modifiers": ["public", "static", "final"], "spec": "Task 3"},
+        {"id": "GameEngine.LEVEL_HEIGHT", "kind": "field", "name": "LEVEL_HEIGHT", "type": "int", "modifiers": ["public", "static", "final"], "spec": "Task 3"},
+        {"id": "GameEngine.rng", "kind": "field", "name": "rng", "type": "Random", "modifiers": ["private"], "spec": "Task 6"},
+        {"id": "GameEngine.turnNumber", "kind": "field", "name": "turnNumber", "type": "int", "modifiers": ["private"]},
+        {"id": "GameEngine.carriedItemsValue", "kind": "field", "name": "carriedItemsValue", "type": "int", "modifiers": ["private"], "spec": "Task 14"},
+        {"id": "GameEngine.score", "kind": "field", "name": "score", "type": "int", "modifiers": ["private"], "spec": "Task 10"},
+        {"id": "GameEngine.map", "kind": "field", "name": "map", "type": "MapTile[][]", "modifiers": ["private"], "spec": "Task 3"},
+        {"id": "GameEngine.diver", "kind": "field", "name": "diver", "type": "Diver", "modifiers": ["private"], "spec": "Task 1"},
+        {"id": "GameEngine.entityMap", "kind": "field", "name": "entityMap", "type": "Entity[][]", "modifiers": ["private"], "spec": "Task 10"},
+        {"id": "GameEngine.entityArray", "kind": "field", "name": "entityArray", "type": "Entity[]", "modifiers": ["private"], "spec": "Task 6"},
+        {"id": "GameEngine.createDiver()", "kind": "method", "name": "createDiver", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 1"},
+        {"id": "GameEngine.moveDiverRight()", "kind": "method", "name": "moveDiverRight", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
+        {"id": "GameEngine.moveDiverLeft()", "kind": "method", "name": "moveDiverLeft", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
+        {"id": "GameEngine.moveDiverUp()", "kind": "method", "name": "moveDiverUp", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
+        {"id": "GameEngine.moveDiverDown()", "kind": "method", "name": "moveDiverDown", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
+        {"id": "GameEngine.createBasicMap()", "kind": "method", "name": "createBasicMap", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 3"},
+        {"id": "GameEngine.betterMoveDiverRight()", "kind": "method", "name": "betterMoveDiverRight", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 4"},
+        {"id": "GameEngine.betterMoveDiverLeft()", "kind": "method", "name": "betterMoveDiverLeft", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 4"},
+        {"id": "GameEngine.betterMoveDiverUp()", "kind": "method", "name": "betterMoveDiverUp", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 4"},
+        {"id": "GameEngine.betterMoveDiverDown()", "kind": "method", "name": "betterMoveDiverDown", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 4"},
+        {"id": "GameEngine.createAdvancedMap()", "kind": "method", "name": "createAdvancedMap", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 5"},
+        {"id": "GameEngine.makeCreatures()", "kind": "method", "name": "makeCreatures", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 6"},
+        {"id": "GameEngine.createTreasure()", "kind": "method", "name": "createTreasure", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 7"},
+        {"id": "GameEngine.createComplexMap()", "kind": "method", "name": "createComplexMap", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 8"},
+        {"id": "GameEngine.efficientMoveDiver(char)", "kind": "method", "name": "efficientMoveDiver", "parameters": ["char"], "returns": "void", "modifiers": ["public"], "spec": "Task 9"},
+        {"id": "GameEngine.moveCreatures()", "kind": "method", "name": "moveCreatures", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 11"},
+        {"id": "GameEngine.adjustAir()", "kind": "method", "name": "adjustAir", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 12"},
+        {"id": "GameEngine.syncEntityData()", "kind": "method", "name": "syncEntityData", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 10"},
+        {"id": "GameEngine.doTurn()", "kind": "method", "name": "doTurn", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "GameEngine.startGame()", "kind": "method", "name": "startGame", "parameters": [], "returns": "void", "modifiers": ["public"]}
+      ]
+    },
+    {
+      "id": "MapTile", "kind": "class", "modifiers": ["public"], "starter": "MapTile.java", "spec": "Task 3",
+      "members": [
+        {"id": "MapTile(MapTile.TileType)", "kind": "constructor", "parameters": ["MapTile.TileType"], "modifiers": ["public"], "spec": "Task 3"},
+        {"id": "MapTile.getType()", "kind": "method", "name": "getType", "parameters": [], "returns": "MapTile.TileType", "modifiers": ["public"], "spec": "Task 9"},
+        {"id": "MapTile.isType(MapTile.TileType)", "kind": "method", "name": "isType", "parameters": ["MapTile.TileType"], "returns": "boolean", "modifiers": ["public"], "spec": "Task 9"}
+      ]
+    },
+    {
+      "id": "MapTile.TileType", "kind": "enum", "modifiers": ["public"], "nestedIn": "MapTile", "starter": "MapTile.java", "spec": "Task 3",
+      "members": [
+        {"id": "MapTile.TileType.SHALLOW_SEA", "kind": "constant", "name": "SHALLOW_SEA", "spec": "Task 3"},
+        {"id": "MapTile.TileType.TRANSITION_SEA", "kind": "constant", "name": "TRANSITION_SEA", "spec": "Task 5"},
+        {"id": "MapTile.TileType.DEEP_SEA", "kind": "constant", "name": "DEEP_SEA", "spec": "Task 5"},
+        {"id": "MapTile.TileType.SURFACE", "kind": "constant", "name": "SURFACE", "spec": "Task 5"},
+        {"id": "MapTile.TileType.SKY", "kind": "constant", "name": "SKY", "spec": "Task 5"},
+        {"id": "MapTile.TileType.ROCK_WALL", "kind": "constant", "name": "ROCK_WALL", "spec": "Task 8"}
+      ]
+    },
+    {
+      "id": "Entity", "kind": "class", "modifiers": ["public", "abstract"], "starter": "Entity.java", "spec": "Task 2",
+      "members": [
+        {"id": "Entity.getX()", "kind": "method", "name": "getX", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.setX(int)", "kind": "method", "name": "setX", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.getY()", "kind": "method", "name": "getY", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.setY(int)", "kind": "method", "name": "setY", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.setPosition(int,int)", "kind": "method", "name": "setPosition", "parameters": ["int", "int"], "returns": "void", "modifiers": ["public"], "spec": "Task 2"},
+        {"id": "Entity.getType()", "kind": "method", "name": "getType", "parameters": [], "returns": "String", "modifiers": ["public"], "spec": "Task 10"}
+      ]
+    },
+    {
+      "id": "Diver", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Diver.java", "spec": "Task 1",
+      "members": [
+        {"id": "Diver(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 1"},
+        {"id": "Diver.setMaxAir(int)", "kind": "method", "name": "setMaxAir", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 12"},
+        {"id": "Diver.getMaxAir()", "kind": "method", "name": "getMaxAir", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 12"},
+        {"id": "Diver.setAir(int)", "kind": "method", "name": "setAir", "parameters": ["int"], "returns": "void", "modifiers": ["public"], "spec": "Task 12"},
+        {"id": "Diver.getAir()", "kind": "method", "name": "getAir", "parameters": [], "returns": "int", "modifiers": ["public"], "spec": "Task 12"},
+        {"id": "Diver.fillAir()", "kind": "method", "name": "fillAir", "parameters": [], "returns": "void", "modifiers": ["public"], "spec": "Task 12"}
+      ]
+    },
+    {
+      "id": "Shark", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Shark.java", "spec": "Task 6",
+      "members": [
+        {"id": "Shark(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 6"}
+      ]
+    },
+    {
+      "id": "Chest", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "Chest.java", "spec": "Task 7",
+      "members": [
+        {"id": "Chest(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 7"}
+      ]
+    },
+    {
+      "id": "SubmarineLeft", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "SubmarineLeft.java", "spec": "Task 14",
+      "members": [
+        {"id": "SubmarineLeft(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 14"}
+      ]
+    },
+    {
+      "id": "SubmarineRight", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "SubmarineRight.java", "spec": "Task 14",
+      "members": [
+        {"id": "SubmarineRight(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 14"}
+      ]
+    }
+  ]
+}

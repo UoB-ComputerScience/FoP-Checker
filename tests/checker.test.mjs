@@ -10,7 +10,7 @@ import {
   sha256,
 } from '../checker/js/checker.js';
 import { inspectMetadata, ArchiveError } from '../checker/js/archive.js';
-import { getProfile, LIMITS } from '../checker/js/profiles.js';
+import { getProfile, COURSEWORKS, LIMITS } from '../checker/js/profiles.js';
 
 async function zip(entries, options = {}) {
   const writer = new Uint8ArrayWriter();
@@ -128,12 +128,28 @@ test('valid dot and repeated-slash source settings do not create false errors', 
   }
 });
 test('a coursework without starter details runs the general checks only', async () => {
-  const result = await checkSubmission(await zip(entriesFor('project/')), 'diver-26-27');
-  assert.equal(result.complete, true);
+  const { checks, expectedProjectFiles } = getProfile('diver-26-27');
+  const profile = { id: 'unreleased', checks: checks.filter(id => !id.startsWith('fop.')), expectedProjectFiles };
+  const files = new Map(entriesFor('project/').map(([path, text]) => [path, { path, text, size: text.length }]));
+  const result = await inspectProject({ files, portability: [] }, profile);
   assert.deepEqual(
-    result.findings.map(f => f.id + ':' + f.status),
-    ['archive.integrity:pass', 'java.sources:pass', 'netbeans.project:pass', 'java.syntax:pass'],
+    result.map(f => f.id + ':' + f.status),
+    ['java.sources:pass', 'netbeans.project:pass', 'java.syntax:pass'],
   );
+});
+test('every coursework profile fingerprints each starter source and lists its images', async () => {
+  for (const { id } of COURSEWORKS) {
+    const profile = getProfile(id);
+    assert.ok(profile.checks.includes('fop.starter'), id);
+    assert.ok(profile.expectedSourceFiles.includes(profile.rootMarker), id);
+    assert.deepEqual(Object.keys(profile.starter).sort(), [...profile.expectedSourceFiles].sort(), id);
+    for (const hash of Object.values(profile.starter).flat()) assert.match(hash, /^[0-9a-f]{64}$/, id);
+    assert.ok(profile.assets.length && profile.assets.every(path => /^assets\/\w+\.png$/.test(path)), id);
+    assert.equal(profile.javaVersion, '24', id);
+    const { package: name, types } = JSON.parse(await readFile(profile.availability, 'utf8'));
+    const folder = 'src/' + name.replaceAll('.', '/') + '/';
+    for (const type of types) assert.ok(profile.starter[folder + type.starter], `${id}: ${type.id}`);
+  }
 });
 test('extra classes are allowed without the obsolete report reminder', async () => {
   const result = await checkSubmission(
@@ -251,6 +267,24 @@ test('starter comparison tolerates BOM and line endings but notices code edits',
   );
   assert.equal(normaliseText('\uFEFFx\r\ny\rz'), 'x\ny\nz');
 });
+test('a file that changed between starter releases matches any release, unchanged', async () => {
+  const path = 'src/Main.java';
+  const releases = ['class Main {\n}\n', 'class Main {\n    // fixed\n}\n'];
+  const profile = {
+    ...getProfile('farm-25-26'),
+    expectedSourceFiles: [path],
+    starter: { [path]: await Promise.all(releases.map(text => sha256(text))) },
+    checks: ['netbeans.project', 'fop.starter'],
+  };
+  const records = new Map(entriesFor('').map(([path, text]) => [path, { path, text, size: text.length }]));
+  const unchanged = async text => {
+    records.get(path).text = text;
+    const result = await inspectProject({ files: records, portability: [] }, profile);
+    return result.some(f => f.id === 'fop.starter' && f.status === 'error');
+  };
+  for (const text of releases) assert.equal(await unchanged(text), true, text);
+  assert.equal(await unchanged('class Main { int changed; }'), false);
+});
 
 test('readable ZIP filename is advisory, broken ZIP is critical', async () => {
   const good = await zip([['Main.java', 'class Main {}']]);
@@ -354,11 +388,11 @@ test('ZIP contents are checked despite a misleading Java filename', async () => 
   assert.ok(has(result, 'submission.extension', 'warning'));
 });
 
-const catalogue = JSON.parse(
-  await readFile(new URL('../farm-25-26/availability.json', import.meta.url), 'utf8'),
-);
+const readCatalogue = async id =>
+  JSON.parse(await readFile(new URL(`../${id}/availability.json`, import.meta.url), 'utf8'));
+const farmCatalogue = await readCatalogue('farm-25-26');
 // Declarations only, written from the catalogue, so no starter code is published here.
-function catalogueSources() {
+function catalogueSources(catalogue = farmCatalogue) {
   const declare = type => {
     const name = type.id.split('.').at(-1);
     const constants = type.members.filter(m => m.kind === 'constant').map(m => m.name);
@@ -386,16 +420,15 @@ const swap = (type, from, to) => sources => {
   assert.ok(sources.get(type).includes(from), from);
   sources.set(type, sources.get(type).replace(from, to));
 };
-async function codeFindings(prefix, change = () => {}) {
-  const sources = catalogueSources();
+async function codeFindings(prefix, change = () => {}, coursework = 'farm-25-26', extra = []) {
+  const catalogue = await readCatalogue(coursework);
+  const sources = catalogueSources(catalogue);
   change(sources);
   const project = entriesFor('').filter(([p]) => !p.endsWith('Main.java'));
+  const folder = 'src/' + catalogue.package.replaceAll('.', '/') + '/';
   const report = await checkSubmission(
-    await zip([
-      ...project,
-      ...[...sources].map(([name, text]) => [`src/uk/ac/bradford/farmgame/${name}.java`, text]),
-    ]),
-    'farm-25-26',
+    await zip([...project, ...[...sources].map(([name, text]) => [`${folder}${name}.java`, text]), ...extra]),
+    coursework,
   );
   return Object.fromEntries(report.findings.filter(f => f.id.startsWith(prefix)).map(f => [f.id, f]));
 }
@@ -445,6 +478,101 @@ test('missing or changed required code is listed by name', async () => {
     assert.equal(found['fop.availability'].status, 'warning', expected);
     assert.deepEqual(found['fop.availability'].paths, [expected]);
     assert.equal(found['fop.availability'].list, 'item');
+  }
+});
+test('Diver code matching its catalogue passes, with or without the files NetBeans adds to an export', async () => {
+  const diver = (change, extra) => codeFindings('', change, 'diver-26-27', extra);
+  const statuses = report => Object.values(report).map(f => `${f.id}:${f.status}`);
+  const clean = await diver();
+  assert.equal(clean['fop.availability'].status, 'pass');
+  // NetBeans writes these when the project is built; keeping them is not a mistake.
+  const exported = await diver(undefined, [
+    ['build/built-jar.properties', '#built'],
+    ['build/classes/uk/ac/bradford/divegame/GameEngine.class', 'compiled'],
+    ['dist/FoPCW2026.jar', 'jar'],
+    ['nbproject/private/private.properties', 'compile.on.save=true'],
+    ['nbproject/private/private.xml', '<project-private/>'],
+  ]);
+  assert.deepEqual(statuses(exported), statuses(clean));
+});
+const diverAvailability = change => codeFindings('fop.availability', change, 'diver-26-27');
+test('missing or changed Diver code is listed by name', async () => {
+  const cases = [
+    // Version 1.1 of the specification named these betterMoveUp() and so on.
+    [swap('GameEngine', 'void betterMoveDiverUp(', 'void betterMoveUp('), 'GameEngine.betterMoveDiverUp(): missing'],
+    [
+      swap('GameEngine', 'void efficientMoveDiver(char p0)', 'void efficientMoveDiver(String p0)'),
+      'GameEngine.efficientMoveDiver(char): expected parameters (char), found (String)',
+    ],
+    [
+      swap('GameEngine', 'public void doTurn()', 'public int doTurn()'),
+      'GameEngine.doTurn(): expected return type void, found int',
+    ],
+    [
+      swap('GameEngine', 'private MapTile[][] map;', 'private MapTile[] map;'),
+      'GameEngine.map: expected type MapTile[][], found MapTile[]',
+    ],
+    [
+      swap('GameEngine', 'private Entity[] entityArray;', 'private Entity[][] entityArray;'),
+      'GameEngine.entityArray: expected type Entity[], found Entity[][]',
+    ],
+    [swap('GameEngine', 'private int score;', 'private int points;'), 'GameEngine.score: missing'],
+    [
+      swap('MapTile', 'boolean isType(MapTile.TileType p0)', 'boolean isType(int p0)'),
+      'MapTile.isType(MapTile.TileType): expected parameters (MapTile.TileType), found (int)',
+    ],
+    [swap('MapTile', ', ROCK_WALL', ''), 'MapTile.TileType.ROCK_WALL: missing'],
+    [
+      swap('Diver', 'public Diver(int p0, int p1)', 'public Diver(int p0)'),
+      'Diver(int,int): expected parameters (int, int), found (int)',
+    ],
+    [swap('Diver', 'public void fillAir() {}', ''), 'Diver.fillAir(): missing'],
+    [
+      swap('Entity', 'public String getType()', 'public int getType()'),
+      'Entity.getType(): expected return type String, found int',
+    ],
+    [swap('Shark', ' extends Entity', ''), 'class Shark: expected to extend Entity'],
+    [swap('Entity', 'package uk.ac.bradford.divegame;', 'package other;'), 'class Entity: missing'],
+    [sources => sources.delete('SubmarineLeft'), 'class SubmarineLeft: missing'],
+  ];
+  for (const [change, expected] of cases) {
+    const found = await diverAvailability(change);
+    assert.deepEqual(Object.keys(found), ['fop.availability'], expected);
+    assert.equal(found['fop.availability'].status, 'warning', expected);
+    assert.deepEqual(found['fop.availability'].paths, [expected]);
+  }
+});
+test('equivalent Diver declarations, changed access, inheritance and extra code are accepted', async () => {
+  const changes = [
+    swap('GameEngine', 'private MapTile[][] map;', 'private MapTile map[][];'),
+    swap('GameEngine', 'private Random rng;', 'private java.util.Random rng = new java.util.Random(123);'),
+    swap('GameEngine', 'private void createDiver()', 'public void createDiver()'),
+    // A larger map (Task 20) may make the level size changeable.
+    swap('GameEngine', 'public static final int LEVEL_WIDTH;', 'public static int LEVEL_WIDTH = 72;'),
+    swap('GameEngine', 'void efficientMoveDiver(char p0)', 'void efficientMoveDiver(final char p0)'),
+    swap(
+      'MapTile',
+      'public MapTile(MapTile.TileType p0)',
+      'public MapTile(uk.ac.bradford.divegame.MapTile.TileType p0)',
+    ),
+    swap('MapTile', 'public MapTile.TileType getType()', 'public TileType getType()'),
+    // New tiles for currents (Task 16).
+    swap('MapTile', 'SHALLOW_SEA, ', 'CURRENT_LEFT, CURRENT_RIGHT, SHALLOW_SEA, '),
+    // Air moved to a supertype is still available to the diver.
+    sources => {
+      swap('Diver', 'public int getAir() {}', '')(sources);
+      swap('Entity', 'public int getX() {}', 'public int getX() {}\npublic int getAir() { return 0; }')(sources);
+    },
+    // A shared creature class (Task 15) between Shark and Entity.
+    sources => {
+      swap('Shark', ' extends Entity', ' extends Creature')(sources);
+      sources.set('Creature', 'package uk.ac.bradford.divegame;\npublic abstract class Creature extends Entity {}\n');
+    },
+  ];
+  for (const [index, change] of changes.entries()) {
+    const found = await diverAvailability(change);
+    assert.deepEqual(Object.keys(found), ['fop.availability'], 'case ' + index);
+    assert.equal(found['fop.availability'].status, 'pass', 'case ' + index);
   }
 });
 test('equivalent declarations, changed access, inheritance and extra code are accepted', async () => {

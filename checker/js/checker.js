@@ -287,7 +287,8 @@ const checks = {
     else if (!doubtful.length) context.add('fop.availability.pass', { count: compared });
   },
 
-  // Critical only when the project's Java files are exactly the starter's, unchanged.
+  // Critical only when the project's Java files are exactly the starter's, unchanged. A file
+  // that changed between starter releases has a list of fingerprints, one per release.
   'fop.starter': async ({ files, profile, root, add }) => {
     if (root === undefined) return;
     const originals = profile.expectedSourceFiles;
@@ -297,7 +298,8 @@ const checks = {
     if (java.length !== originals.length) return;
     for (const path of originals) {
       const text = files.get(root + path)?.text;
-      if (text == null || (await sha256(normaliseText(text))) !== profile.starter[path]) return;
+      const released = [profile.starter[path]].flat();
+      if (text == null || !released.includes(await sha256(normaliseText(text)))) return;
     }
     add('fop.starter.error');
   },
