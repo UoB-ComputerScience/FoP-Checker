@@ -2,11 +2,11 @@
 // ZIP a student might hand in, with the findings it should get. The projects are built here
 // from availability.json, so no starter code is kept in the repository.
 //
-// The real starter ZIPs are checked too when they are in TestFiles/Diver/ (ignored by git):
-// FoPCW2026.zip, FoPCW2026-1.zip and FoPCW2026-2.zip. Without them those tests are skipped.
-//
-// To try the dummy ZIPs in the browser, run with WRITE_EXAMPLES=1; they are written to
-// TestFiles/Generated/Diver-exports/.
+// Test files that are not kept in git are shared beside the repository, in
+// ../TestFiles/<coursework>/ (TestFiles/Diver/ for this one):
+// - Starters/: the real starter ZIPs, FoPCW2026.zip, FoPCW2026-1.zip and FoPCW2026-2.zip,
+//   checked unchanged and with one method written. Without them those tests are skipped.
+// - NetBeans-exports/: where WRITE_EXAMPLES=1 writes the dummy ZIPs, to try in the browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -278,7 +278,8 @@ const examples = [
 ];
 
 const writing = process.env.WRITE_EXAMPLES === '1';
-const output = new URL('../TestFiles/Generated/Diver-exports/', import.meta.url);
+const shared = new URL('../../TestFiles/Diver/', import.meta.url);
+const output = new URL('NetBeans-exports/', shared);
 if (writing) await mkdir(output, { recursive: true });
 const findings = report => report.findings.map(f => `${f.id}:${f.status}`).sort();
 
@@ -303,9 +304,9 @@ async function entriesOf(file) {
   return entries;
 }
 for (const release of ['FoPCW2026.zip', 'FoPCW2026-1.zip', 'FoPCW2026-2.zip']) {
-  const path = new URL(`../TestFiles/Diver/${release}`, import.meta.url);
+  const path = new URL(`Starters/${release}`, shared);
   const bytes = await readFile(path).catch(() => null);
-  test(`starter release ${release} is unchanged; with one method written it is not`, { skip: !bytes && 'not in TestFiles/Diver/' }, async () => {
+  test(`starter release ${release} is unchanged; with one method written it is not`, { skip: !bytes && 'not in TestFiles/Diver/Starters/' }, async () => {
     const unchanged = await checkSubmission(new File([bytes], release), 'diver-26-27');
     assert.deepEqual(findings(unchanged), plus('fop.starter:error').sort());
 
