@@ -8,9 +8,9 @@
   },
   "scope": [
     "Every entry is declared in the starter; modifiers and types are the starter's.",
-    "Listed: the classes, methods and attributes that Tasks 1 to 14 tell students to complete, assign or use, plus the starter code that runs them each game and turn.",
-    "spec is the first task whose text refers to the entry. Entries without it are not named in Tasks 1 to 14 but run the code those tasks complete: startGame() sets up the game and doTurn() counts turns in turnNumber.",
-    "Not listed: the window, keyboard and launch code, Urchin, parameter names, and anything Tasks 1 to 14 do not ask students to write or use.",
+    "Listed: what the marking tests need, plus the classes, methods and attributes that Tasks 1 to 14 tell students to complete, assign or use.",
+    "spec is the first task whose text refers to the entry. Entries without it are listed because a marking test needs them: the tests make the engine and its window, start the game as the starter's Launcher does, and set turnNumber.",
+    "Not listed: the window's drawing code, the key handling, Launcher, Urchin, parameter names, and anything no test needs that Tasks 1 to 14 do not ask students to write or use.",
     "Compared: kind, names, parameter types, return and attribute types, and extends. A member inherited from a supertype satisfies its entry.",
     "Not compared: access, static, final and abstract. Extra types, members and enum values are allowed."
   ],
@@ -28,6 +28,7 @@
         {"id": "GameEngine.diver", "kind": "field", "name": "diver", "type": "Diver", "modifiers": ["private"], "spec": "Task 1"},
         {"id": "GameEngine.entityMap", "kind": "field", "name": "entityMap", "type": "Entity[][]", "modifiers": ["private"], "spec": "Task 10"},
         {"id": "GameEngine.entityArray", "kind": "field", "name": "entityArray", "type": "Entity[]", "modifiers": ["private"], "spec": "Task 6"},
+        {"id": "GameEngine(GameGUI)", "kind": "constructor", "parameters": ["GameGUI"], "modifiers": ["public"]},
         {"id": "GameEngine.createDiver()", "kind": "method", "name": "createDiver", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 1"},
         {"id": "GameEngine.moveDiverRight()", "kind": "method", "name": "moveDiverRight", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
         {"id": "GameEngine.moveDiverLeft()", "kind": "method", "name": "moveDiverLeft", "parameters": [], "returns": "void", "modifiers": ["private"], "spec": "Task 2"},
@@ -113,6 +114,19 @@
       "id": "SubmarineRight", "kind": "class", "modifiers": ["public"], "extends": "Entity", "starter": "SubmarineRight.java", "spec": "Task 14",
       "members": [
         {"id": "SubmarineRight(int,int)", "kind": "constructor", "parameters": ["int", "int"], "modifiers": ["public"], "spec": "Task 14"}
+      ]
+    },
+    {
+      "id": "GameGUI", "kind": "class", "modifiers": ["public"], "extends": "JFrame", "starter": "GameGUI.java", "spec": "Task 3",
+      "members": [
+        {"id": "GameGUI()", "kind": "constructor", "parameters": [], "modifiers": ["public"]},
+        {"id": "GameGUI.registerKeyHandler(InputHandler)", "kind": "method", "name": "registerKeyHandler", "parameters": ["InputHandler"], "returns": "void", "modifiers": ["public"]}
+      ]
+    },
+    {
+      "id": "InputHandler", "kind": "class", "modifiers": ["public"], "starter": "InputHandler.java", "spec": "Task 2",
+      "members": [
+        {"id": "InputHandler(GameEngine)", "kind": "constructor", "parameters": ["GameEngine"], "modifiers": ["public"]}
       ]
     }
   ]

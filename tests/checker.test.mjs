@@ -497,6 +497,17 @@ test('missing or changed Diver code is listed by name', async () => {
     [swap('Shark', ' extends Entity', ''), 'class Shark: expected to extend Entity'],
     [swap('Entity', 'package uk.ac.bradford.divegame;', 'package other;'), 'class Entity: missing'],
     [sources => sources.delete('SubmarineLeft'), 'class SubmarineLeft: missing'],
+    // The marking tests make the engine and its window, and start the game as Launcher does.
+    [
+      swap('GameEngine', 'public GameEngine(GameGUI p0)', 'public GameEngine()'),
+      'GameEngine(GameGUI): expected parameters (GameGUI), found ()',
+    ],
+    [swap('GameGUI', ' extends JFrame', ''), 'class GameGUI: expected to extend JFrame'],
+    [swap('GameGUI', 'public void registerKeyHandler(InputHandler p0) {}', ''), 'GameGUI.registerKeyHandler(InputHandler): missing'],
+    [
+      swap('InputHandler', 'public InputHandler(GameEngine p0)', 'public InputHandler(GameGUI p0)'),
+      'InputHandler(GameEngine): expected parameters (GameEngine), found (GameGUI)',
+    ],
   ];
   for (const [change, expected] of cases) {
     const found = await diverAvailability(change);

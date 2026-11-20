@@ -20,13 +20,11 @@ const catalogue = await readCatalogue('diver-26-27');
 const folder = 'src/uk/ac/bradford/divegame/';
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-// A completed-looking project: the catalogue's declarations with a little code, the four
+// A completed-looking project: the catalogue's declarations with a little code, the two
 // starter classes the catalogue does not list, the images and the NetBeans files.
 function project({ root = 'FoPCW2026/', properties = {}, change = () => {} } = {}) {
   const sources = catalogueSources(catalogue);
   const pkg = `package ${catalogue.package};\n`;
-  sources.set('GameGUI', `${pkg}public class GameGUI {}\n`);
-  sources.set('InputHandler', `${pkg}public class InputHandler {}\n`);
   sources.set('Launcher', `${pkg}public class Launcher {\npublic static void main(String[] args) {}\n}\n`);
   sources.set('Urchin', `${pkg}public class Urchin extends Entity {\npublic Urchin(int x, int y) {}\n}\n`);
   sources.set(
