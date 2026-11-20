@@ -19,13 +19,13 @@ export function countWords(text) {
 
 export async function checkPdfReport(file, report, { progress = () => {}, limits = LIMITS } = {}) {
   if (file.size > limits.archiveBytes) return stop(report, 'report.limit.warning.3');
-  // PDF.js 5.6.205, distributed under Apache-2.0; see vendor/pdfjs/LICENSE.
+  // PDF.js 6.5.438, distributed under Apache-2.0; see vendor/pdfjs/LICENSE.
   // Its parser is registered in this worker rather than in a nested one, which
   // could outlive the cancellation of the report check.
   await import('../vendor/pdfjs/pdf.worker.js');
   const { getDocument } = await import('../vendor/pdfjs/pdf.js');
 
-  // PDF.js 5.6 still substitutes an empty stream for some decoder failures, even with
+  // PDF.js still substitutes an empty stream for some decoder failures, even with
   // stopAtErrors. Its warning is watched for so that lost page data cannot pass as a
   // successful check. This console belongs to the worker, so nothing else is affected.
   let invalidStream = false;
@@ -48,8 +48,8 @@ export async function checkPdfReport(file, report, { progress = () => {}, limits
     task = getDocument({
       data,
       stopAtErrors: true,
-      // Nothing from the document is run or fetched.
-      isEvalSupported: false,
+      // Nothing from the document is run or fetched. PDF.js 6 compiles no code from a
+      // document, so it has no isEvalSupported option; scripting needs its viewer, unused here.
       enableXfa: false,
       disableFontFace: true,
       useSystemFonts: false,

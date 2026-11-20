@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@zip.js/zip.js": "2.14.1",
-    "pdfjs-dist": "5.6.205",
+    "pdfjs-dist": "6.5.438",
     "tree-sitter-java": "0.23.5",
     "web-tree-sitter": "0.27.1"
   }
