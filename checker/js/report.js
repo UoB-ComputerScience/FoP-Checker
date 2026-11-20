@@ -69,9 +69,12 @@ export async function prepareReport(file, options = {}) {
   }
 }
 
-// A document type declaration is refused: it can define entities that expand without limit.
+// Entity declarations, and a document type declaration with its own internal section, are
+// refused: entities can expand without limit. A plain declaration naming an external DTD is
+// allowed, since browsers never load it; OpenOffice and macOS TextEdit write one in an ODT's
+// META-INF/manifest.xml.
 function parseXml(text) {
-  if (text == null || /<!DOCTYPE/i.test(text)) throw new Error('xml');
+  if (text == null || /<!DOCTYPE[^>]*\[|<!ENTITY/i.test(text)) throw new Error('xml');
   const doc = new DOMParser().parseFromString(text, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length || !doc.documentElement) throw new Error('xml');
   return doc;
