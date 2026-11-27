@@ -235,7 +235,7 @@ export default {
     "id": "fop.package",
     "status": "error",
     "title": "Coursework project: not the {coursework} project",
-    "message": "No Java file is in the package {package}. Export your {coursework} coursework project, not another project.",
+    "message": "No Java file is in package {package}. Export your {coursework} coursework project.",
     "purpose": "Catch a different project exported by mistake, such as a lab exercise or another year's coursework.",
     "method": "Look at every Java file in the ZIP. Pass silently if any is in the coursework package's folder or declares that package; otherwise critical. A project whose package was renamed is also caught, since the marking tests load the coursework package."
   },
@@ -243,7 +243,7 @@ export default {
     "id": "fop.starter",
     "status": "error",
     "title": "Starter code: unchanged",
-    "message": "Every starter Java file is unchanged, apart from comments or layout. Export the project containing your own work.",
+    "message": "Export the project containing your own work.",
     "purpose": "Catch an untouched starter project, including one with only comments, formatting or new files added: every task is completed in the starter's own classes.",
     "method": "Remove comments and make the layout uniform (string literals are kept), then compare each starter path against the SHA-256 fingerprint of that file in any starter release. Critical only when every starter file is present and matches; extra Java files are ignored. It does not measure meaningful completion."
   },
@@ -251,8 +251,8 @@ export default {
     "id": "submission.report",
     "status": "error",
     "title": "Report: document inside the ZIP",
-    "message": "Remove the listed documents from the ZIP. Submit your report on its own on Canvas: a report in a ZIP cannot be scanned by Turnitin, and the brief gives a mark of zero for it.",
-    "purpose": "Catch a report zipped with the code, which the brief gives a mark of zero.",
+    "message": "Remove the listed documents. Submit your report separately on Canvas, and check it with the report checker below.",
+    "purpose": "Catch a report zipped with the code: it must be submitted as a document of its own.",
     "method": "Look for DOC, DOCX, ODT, RTF, PAGES or PDF filenames inside the ZIP; this does not inspect their contents, so any document is listed, such as a copy of the brief."
   },
   "archive.integrity.pass": {

@@ -64,8 +64,8 @@ export default {
     "id": "report.zipped",
     "status": "error",
     "title": "Report: a ZIP file",
-    "message": "Choose your report document itself. A report in a ZIP cannot be scanned by Turnitin, and the brief gives a mark of zero for it.",
-    "purpose": "Catch a report zipped, alone or with the code, which the brief gives a mark of zero.",
+    "message": "Choose your report document, not a ZIP. Submit it on Canvas separately from your project ZIP.",
+    "purpose": "Catch a report put in a ZIP, alone or with the code: it must be submitted as a document of its own.",
     "method": "A ZIP that is neither a DOCX (content types and package relationships) nor an ODT (its mimetype). Do not rely only on the filename."
   },
   "report.structure.error": {
@@ -120,7 +120,7 @@ export default {
     "id": "report.words",
     "status": "warning",
     "title": "Word count: approximately {count}",
-    "message": "This is very short. Check that this is your complete report, not a cover page or a draft.",
+    "message": "Check that this is your complete report.",
     "purpose": "Catch a cover page, template or early draft chosen instead of the report.",
     "method": "As for the word count: fewer than 100 words is advisory. The brief asks for at least 25 words on each task attempted. Length is not a measure of quality."
   },
