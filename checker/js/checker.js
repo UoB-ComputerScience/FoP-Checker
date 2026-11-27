@@ -9,6 +9,27 @@ import { compareDeclarations } from './availability.js';
 // still matches the starter's fingerprint.
 export const normaliseText = text => text.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
 
+// A Java file's code with its comments removed and its layout made uniform, so a file whose only
+// changes are comments, blank lines, indentation or spacing still matches the starter. White
+// space is kept, as one space, only between two letters or digits, where removing it would
+// join two words. String, character and text-block literals are kept exactly.
+const JAVA_PIECES =
+  /"""(?:\\[\s\S]|[^\\])*?"""|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|\/\/[^\n]*|\/\*[\s\S]*?\*\/|\s+|[^\s"'/]+|[\s\S]/g;
+export function codeOnly(text) {
+  let code = '';
+  let gap = false;
+  for (const [piece] of normaliseText(text).matchAll(JAVA_PIECES)) {
+    if (/^\s/.test(piece) || /^\/[/*]/.test(piece)) {
+      gap = true;
+      continue;
+    }
+    if (gap && /[\w$]$/.test(code) && /^[\w$]/.test(piece)) code += ' ';
+    code += piece;
+    gap = false;
+  }
+  return code;
+}
+
 export async function sha256(data) {
   const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
@@ -85,7 +106,7 @@ async function readJson(url) {
 
 // The code checks share one reading of the Java files in the project's source folder,
 // or in the whole project if the source folder has none.
-function javaCode(context) {
+function parsedJava(context) {
   context.java ??= (async () => {
     try {
       const java = [...context.files.values()].filter(
@@ -216,7 +237,7 @@ const checks = {
 
   'java.syntax': async context => {
     if (context.root === undefined) return;
-    const code = await javaCode(context);
+    const code = await parsedJava(context);
     if (!code) return;
     if (code.syntax.length) {
       context.add(
@@ -232,7 +253,7 @@ const checks = {
   // Mistakes that are valid syntax but can never compile.
   'java.declarations': async context => {
     if (context.root === undefined) return;
-    const code = await javaCode(context);
+    const code = await parsedJava(context);
     if (!code) return;
     // A file with a syntax error is left to the syntax check.
     const types = code.types.filter(type => !type.incomplete);
@@ -272,7 +293,7 @@ const checks = {
 
   'fop.availability': async context => {
     if (context.root === undefined) return;
-    const code = await javaCode(context);
+    const code = await parsedJava(context);
     if (!code) return;
     let catalogue;
     try {
@@ -287,26 +308,40 @@ const checks = {
     else if (!doubtful.length) context.add('fop.availability.pass', { count: compared });
   },
 
-  // Critical only when the project's Java files are exactly the starter's, unchanged. A file
-  // that changed between starter releases has a list of fingerprints, one per release.
+  // Critical when the project is not this coursework: no Java file anywhere in the ZIP is in the
+  // coursework's package, by its folder or its package declaration.
+  'fop.package': ({ files, profile, add }) => {
+    const java = [...files.values()].filter(file => file.path.endsWith('.java'));
+    if (!java.length) return;
+    const folder = '/' + profile.package.replaceAll('.', '/') + '/';
+    const declaration = `package ${profile.package};`;
+    const declares = text => {
+      const code = text == null ? '' : codeOnly(text);
+      const at = code.indexOf(declaration);
+      return at >= 0 && !/[\w$]/.test(code[at - 1] ?? '');
+    };
+    if (!java.some(file => ('/' + file.path).includes(folder) || declares(file.text))) {
+      add('fop.package.error', { coursework: profile.title, package: profile.package });
+    }
+  },
+
+  // Critical when every starter Java file is present and unchanged apart from comments and
+  // layout, whatever other files were added: every task is completed in the starter's own
+  // classes. A file that changed between starter releases has a list of fingerprints, one per
+  // release.
   'fop.starter': async ({ files, profile, root, add }) => {
     if (root === undefined) return;
-    const originals = profile.expectedSourceFiles;
-    const java = [...files.values()].filter(
-      file => file.path.startsWith(root) && file.path.endsWith('.java'),
-    );
-    if (java.length !== originals.length) return;
-    for (const path of originals) {
+    for (const path of profile.expectedSourceFiles) {
       const text = files.get(root + path)?.text;
       const released = [profile.starter[path]].flat();
-      if (text == null || !released.includes(await sha256(normaliseText(text)))) return;
+      if (text == null || !released.includes(await sha256(codeOnly(text)))) return;
     }
     add('fop.starter.error');
   },
 
   'submission.report': ({ files, add }) => {
-    const reports = [...files.keys()].filter(path => /\.(docx?|odt|pdf)$/i.test(path));
-    if (reports.length) add('submission.report.warning', {}, reports);
+    const reports = [...files.keys()].filter(path => /\.(docx?|odt|rtf|pages|pdf)$/i.test(path));
+    if (reports.length) add('submission.report.error', {}, reports);
   },
 };
 

@@ -5,7 +5,8 @@
 // Test files that are not kept in git are shared beside the repository, in
 // ../TestFiles/<coursework>/ (TestFiles/Diver/ for this one):
 // - Starters/: the real starter ZIPs, FoPCW2026.zip, FoPCW2026-1.zip and FoPCW2026-2.zip,
-//   checked unchanged and with one method written. Without them those tests are skipped.
+//   checked unchanged, with only comments, layout or a new class changed, and with one method
+//   written. Without them those tests are skipped.
 // - NetBeans-exports/: where WRITE_EXAMPLES=1 writes the dummy ZIPs, to try in the browser.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -156,9 +157,9 @@ const examples = [
   },
   {
     file: '11-report-inside-zip.zip',
-    description: 'The Word report put inside the ZIP. It must also be submitted on its own.',
+    description: 'The Word report put inside the ZIP with the code. The brief gives this a mark of zero.',
     make: () => named([...project(), ['FoPCW2026/Report.docx', png]], '11-report-inside-zip.zip'),
-    expected: plus('submission.report:warning'),
+    expected: plus('submission.report:error'),
   },
   {
     file: '12-backup-copies.zip',
@@ -273,6 +274,56 @@ const examples = [
       'fop.availability:pass',
     ],
   },
+  {
+    file: '24-lab-exercise.zip',
+    description: 'A lab exercise exported instead of the coursework: a NetBeans project with none of the Diver code.',
+    make: () =>
+      named(
+        [
+          ...project().filter(([path]) => !path.endsWith('.java') && !path.includes('/assets/')),
+          ['Lab3/src/lab3/Lab3.java', 'package lab3;\npublic class Lab3 {\npublic static void main(String[] args) {}\n}\n'],
+        ].map(([path, content]) => [path.replace('FoPCW2026/', 'Lab3/'), content]),
+        '24-lab-exercise.zip',
+      ),
+    expected: [
+      'archive.integrity:pass',
+      'java.sources:pass',
+      'fop.package:error',
+      'netbeans.project:pass',
+      'netbeans.java-version:pass',
+      'fop.source-files:warning',
+      'fop.assets:warning',
+      'java.syntax:pass',
+      'fop.availability:warning',
+    ],
+  },
+  {
+    file: '25-last-years-farm-project.zip',
+    description: "Last year's Farm coursework submitted instead: it has a GameEngine.java, in the farmgame package.",
+    make: () =>
+      named(
+        [
+          ...project().filter(([path]) => !path.endsWith('.java') && !path.includes('/assets/')),
+          ...['GameEngine', 'GameGUI', 'Player', 'Tile'].map(name => [
+            `FoPCW2025/src/uk/ac/bradford/farmgame/${name}.java`,
+            `package uk.ac.bradford.farmgame;\npublic class ${name} {}\n`,
+          ]),
+          ['FoPCW2025/assets/player.png', png],
+        ].map(([path, content]) => [path.replace('FoPCW2026/', 'FoPCW2025/'), content]),
+        '25-last-years-farm-project.zip',
+      ),
+    expected: [
+      'archive.integrity:pass',
+      'java.sources:pass',
+      'fop.package:error',
+      'netbeans.project:pass',
+      'netbeans.java-version:pass',
+      'fop.source-files:warning',
+      'fop.assets:warning',
+      'java.syntax:pass',
+      'fop.availability:warning',
+    ],
+  },
 ];
 
 const writing = process.env.WRITE_EXAMPLES === '1';
@@ -304,11 +355,31 @@ async function entriesOf(file) {
 for (const release of ['FoPCW2026.zip', 'FoPCW2026-1.zip', 'FoPCW2026-2.zip']) {
   const path = new URL(`Starters/${release}`, shared);
   const bytes = await readFile(path).catch(() => null);
-  test(`starter release ${release} is unchanged; with one method written it is not`, { skip: !bytes && 'not in TestFiles/Diver/Starters/' }, async () => {
+  test(`starter release ${release} is unchanged, also with comments, layout or a class added; with one method written it is not`, { skip: !bytes && 'not in TestFiles/Diver/Starters/' }, async () => {
     const unchanged = await checkSubmission(new File([bytes], release), 'diver-26-27');
     assert.deepEqual(findings(unchanged), plus('fop.starter:error').sort());
 
+    // Still the starter: the @author line filled in, NetBeans' Format command, an empty class added.
     const entries = await entriesOf(new File([bytes], release));
+    const edit = (entries, name, change) => {
+      const copy = entries.map(([path, content]) => [path, content]);
+      const file = copy.find(([path]) => path.endsWith(folder + name));
+      const text = new TextDecoder().decode(file[1]);
+      const changed = change(text);
+      assert.notEqual(changed, text, name);
+      file[1] = new TextEncoder().encode(changed);
+      return copy;
+    };
+    const root = entries.find(([name]) => name.endsWith(folder + 'GameEngine.java'))[0].slice(0, -(folder + 'GameEngine.java').length);
+    for (const [what, still] of [
+      ['author', edit(entries, 'GameEngine.java', text => text.replace(/@author[^\r\n]*/, '@author A Student 26001234'))],
+      ['format', edit(entries, 'GameEngine.java', text => text.replace(/\r?\n\s*\r?\n/g, '\n').replace(/    /g, '\t'))],
+      ['extra class', [...entries, [`${root}${folder}Helper.java`, new TextEncoder().encode(`package ${catalogue.package};\nclass Helper {}\n`)]]],
+    ]) {
+      const report = await checkSubmission(await named(still, release), 'diver-26-27');
+      assert.ok(findings(report).includes('fop.starter:error'), what);
+    }
+
     const engine = entries.find(([name]) => name.endsWith(folder + 'GameEngine.java'));
     const text = new TextDecoder().decode(engine[1]);
     const completed = text.replace(/(private void createDiver\(\) \{\r?\n)/, '$1        diver = new Diver(5, 1);\n');

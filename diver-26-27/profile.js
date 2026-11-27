@@ -1,41 +1,45 @@
-// SHA-256 of each starter source, after removing a leading BOM and turning every line ending
-// into \n, as the fop.starter check does. The other sources are the same in every release.
+// SHA-256 of each starter source's code, without comments and with uniform layout, as the
+// fop.starter check reads it (codeOnly in checker/js/checker.js). Only GameEngine.java differs
+// between releases.
 const starter = {
   'src/uk/ac/bradford/divegame/Chest.java':
-    'cb3e2cede43ab44d98a98ca193ef79166ac6eec169b4e90083036c7a244f49f5',
+    '8197033755303793fc2c4e6147289e82bd339d7083446dc376b367ea7f03ce8c',
   'src/uk/ac/bradford/divegame/Diver.java':
-    'dcd60eb7643f373dc623cfaab1666db8983acab0281d7532e8e9cb6264564b94',
+    '04987e5eb0361a51ae8d36c37ee50a49e3d14edbe70121878c54ccba137ea7ac',
   'src/uk/ac/bradford/divegame/Entity.java':
-    'e94977b30761184a4d16efab5e126bed6b2c875922300524a0ad716061b1d9f0',
+    'f6f327211a9f4e289dd2f7bdca2b628def8e7b9635f4d5658de50a57f0fd85fa',
   // GameEngine.java changed between releases; an unchanged copy of any of them is the starter.
   'src/uk/ac/bradford/divegame/GameEngine.java': [
-    'b5f3c0dfcbc249b9c847c168b26923bbfebf015b4f53c1a1a5e2de8d4096659b', // FoPCW2026.zip
-    '9a85daf9fa63811ce6b9126c6c5feeeb31d066d84b008c2e09ad274cb0d4dccd', // FoPCW2026-1.zip (spec v1.1)
-    '48c3a16e9458f542dea66bac20619723e5dba9c88867fca3d39f3a40b5d9d8c5', // FoPCW2026-2.zip (spec v1.2)
+    'a4df53462ba9e5280f12b550244031c3b9819bac4a06cba20037b9c91d51a354', // FoPCW2026.zip
+    'aaa1c6e8b70c1f11b71f08abea046702ab2b02a8588210736945c11de974dd90', // FoPCW2026-1.zip (spec v1.1)
+    'b7c139c095616cd812cf83e970aac92bd722673971a3da7369e1009f537dc753', // FoPCW2026-2.zip (spec v1.2)
   ],
   'src/uk/ac/bradford/divegame/GameGUI.java':
-    '4d3dbf5dda4d3c11e9999835c8b79e78378433483ec61385d5baf0b77852c4f6',
+    'e20b611e06d4271e8bd51674ea550a7f50d7028a53e3a0d64489f5678a3c9ec1',
   'src/uk/ac/bradford/divegame/InputHandler.java':
-    '663e886617e7a4c32185a3047900d2d7ad82d903729100e640ceb55553d59c9a',
+    'e4c9e265c20acbbacdc30df2a0217e8d9e658d07249cac6d9af3f4006425a3bd',
   'src/uk/ac/bradford/divegame/Launcher.java':
-    'b02db2bb8b2d1ec953056593554e5c29cd8e93d1e6ba23c57acdbe53d505305f',
+    '2f6be8a554e206a721926d1e1a69658ce757849f9330e91d4eb5a0ffeeb2a4bd',
   'src/uk/ac/bradford/divegame/MapTile.java':
-    '5176e8ad3e0cd14208746c36ff485f03eabfced30fb62602e1305af5673b0e4e',
+    '649752ad30257141ad15898ab38d34d4240e718a99e2308497fe40236b649bf0',
   'src/uk/ac/bradford/divegame/Shark.java':
-    '087c8c09a0fcf3ace657b5ba7734557f956782ca62fbe5e7b867263ca1b5a494',
+    '5ab2f3514a63d8d6a2515fd8ed90db294dfe8ba9e48b74b00883e93f7c078524',
   'src/uk/ac/bradford/divegame/SubmarineLeft.java':
-    '3e374f34a1e9f5ae7c6278059c1d759781578c7717f0376603ae6015f22f7ccc',
+    '060f0330a0bbd3a2b5226b231b1acf3d3deaed440072ba391c5e2981e859c4d2',
   'src/uk/ac/bradford/divegame/SubmarineRight.java':
-    '72f3e1f9cd7388ea009debebaf71dde72995060b0db9df6a550116422363dc9c',
+    '467a495f0deffd86d71ea1413e6b5116fb91219097fd25e46d32dc926c9b4359',
   'src/uk/ac/bradford/divegame/Urchin.java':
-    '8716f53ebc4b50ade9b2983397405346f8c62203db9e0276df4de9fe2908e8ae',
+    '0ab28ffc3abb9143bfb74800554bfba064e9210e858a36e1dd6129ce5c6cf5b8',
 };
 
 export default {
   id: 'diver-26-27',
+  title: 'Diver',
+  package: 'uk.ac.bradford.divegame',
   rootMarker: 'src/uk/ac/bradford/divegame/GameEngine.java',
   checks: [
     'java.sources',
+    'fop.package',
     'archive.extras',
     'netbeans.project',
     'fop.files',

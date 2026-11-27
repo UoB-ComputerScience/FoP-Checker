@@ -4,7 +4,7 @@
 // browser's XML parser, which workers do not have.
 import { makeFinding } from './findings.js';
 import { readArchive, ArchiveError } from './archive.js';
-import { checkPdfReport, countWords } from './report-pdf.js';
+import { checkPdfReport, countWords, wordCount } from './report-pdf.js';
 
 const WORD_NS = [
   'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
@@ -197,6 +197,10 @@ export function inspectReport(prepared) {
   if (!parts) return report;
   const files = new Map(parts.map(part => [part.path, part]));
   const isOdt = files.get('mimetype')?.text?.trim() === ODT_TYPE;
+  // A ZIP that is neither a DOCX nor an ODT: a report, or the project, put in a ZIP.
+  if (!isOdt && !(files.has('[Content_Types].xml') && files.has('_rels/.rels'))) {
+    return stop(report, 'report.zipped.error');
+  }
   let format;
   let body;
   try {
@@ -209,12 +213,10 @@ export function inspectReport(prepared) {
     if (isOdt) {
       format = 'ODT';
       body = odtBody(files, xmls);
-    } else if (xmls.has('[Content_Types].xml') && xmls.has('_rels/.rels')) {
+    } else {
       format = 'DOCX';
       body = docxBody(files, xmls);
       if (!body) return stop(report, 'report.format.warning');
-    } else {
-      return stop(report, 'report.format.error');
     }
   } catch {
     return stop(report, 'report.structure.error');
@@ -227,7 +229,7 @@ export function inspectReport(prepared) {
     report.findings.push(makeFinding('report.extension.warning', { format, extension }));
   }
   const words = countWords(bodyText(body, format));
-  if (words) report.findings.push(makeFinding('report.words.pass', { count: words.toLocaleString() }));
+  if (words) report.findings.push(wordCount(words));
   else if (hasVisualContent(body, parts)) report.findings.push(makeFinding('report.empty.warning'));
   else report.findings.push(makeFinding('report.empty.error'));
   report.complete = true;

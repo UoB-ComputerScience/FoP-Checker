@@ -60,13 +60,13 @@ export default {
     "purpose": "Ensure the file contains a recognised report document.",
     "method": "Inspect DOCX content types and main-document relationships, or the ODT mimetype and manifest. Do not rely only on the filename."
   },
-  "report.format.error": {
-    "id": "report.format",
+  "report.zipped.error": {
+    "id": "report.zipped",
     "status": "error",
-    "title": "Report format: not recognised",
-    "message": "Choose the report saved from your document editor.",
-    "purpose": "Ensure the file contains a recognised report document.",
-    "method": "Inspect DOCX content types and main-document relationships, or the ODT mimetype and manifest. Do not rely only on the filename."
+    "title": "Report: a ZIP file",
+    "message": "Choose your report document itself. A report in a ZIP cannot be scanned by Turnitin, and the brief gives a mark of zero for it.",
+    "purpose": "Catch a report zipped, alone or with the code, which the brief gives a mark of zero.",
+    "method": "A ZIP that is neither a DOCX (content types and package relationships) nor an ODT (its mimetype). Do not rely only on the filename."
   },
   "report.structure.error": {
     "id": "report.structure",
@@ -115,6 +115,14 @@ export default {
     "message": "Select your completed report.",
     "purpose": "Catch an empty report or selection of the wrong file.",
     "method": "Count main-body words. If none exist, check for embedded visual content: images produce advisory; no text or images produces critical."
+  },
+  "report.words.warning": {
+    "id": "report.words",
+    "status": "warning",
+    "title": "Word count: approximately {count}",
+    "message": "This is very short. Check that this is your complete report, not a cover page or a draft.",
+    "purpose": "Catch a cover page, template or early draft chosen instead of the report.",
+    "method": "As for the word count: fewer than 100 words is advisory. The brief asks for at least 25 words on each task attempted. Length is not a measure of quality."
   },
   "report.words.pass": {
     "id": "report.words",
@@ -179,14 +187,6 @@ export default {
     "message": "Check for blank or scanned pages. Text in images is not counted.",
     "purpose": "Flag blank or scanned PDFs requiring a visual check.",
     "method": "If page text extraction returns no words, advise checking the document; do not assume image-only pages are empty."
-  },
-  "report.words.pass.2": {
-    "id": "report.words",
-    "status": "pass",
-    "title": "Word count: approximately {count}",
-    "message": "",
-    "purpose": "Provide a descriptive word count without judging report quality.",
-    "method": "Count word-like segments from main DOCX/ODT body text or extracted PDF text, with a whitespace fallback. Text inside images is not counted."
   },
   "report.limit.warning.6": {
     "id": "report.limit",

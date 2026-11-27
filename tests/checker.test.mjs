@@ -7,6 +7,7 @@ import {
   detectRoots,
   inspectProject,
   normaliseText,
+  codeOnly,
   sha256,
 } from '../checker/js/checker.js';
 import { inspectMetadata, ArchiveError } from '../checker/js/archive.js';
@@ -19,7 +20,7 @@ const entriesFor = root => [
   [root + 'nbproject/project.properties', 'src.dir=src\njavac.source=24\njavac.target=24\n'],
   [root + 'nbproject/build-impl.xml', '<project/>'],
   [root + 'build.xml', '<project/>'],
-  [root + 'src/Main.java', 'class Main {}'],
+  [root + 'src/Main.java', 'package uk.ac.bradford.farmgame; class Main {}'],
 ];
 const meta = (filename, extra = {}) => ({
   filename,
@@ -152,16 +153,36 @@ test('extra classes are allowed without the obsolete report reminder', async () 
     false,
   );
 });
-test('a report inside the ZIP is advisory, not an automatic rejection', async () => {
-  const result = await checkSubmission(
-    await zip([...entriesFor(''), ['report.docx', 'document']]),
-    'farm-25-26',
-  );
-  assert.ok(has(result, 'submission.report', 'warning'));
-  assert.equal(
-    result.findings.some(f => f.status === 'error'),
-    false,
-  );
+test('a report inside the ZIP is critical, since the brief gives it a mark of zero', async () => {
+  for (const name of ['report.docx', 'Report.PDF', 'docs/report.odt', 'report.doc', 'report.rtf']) {
+    const result = await checkSubmission(await zip([...entriesFor(''), [name, 'document']]), 'farm-25-26');
+    const found = result.findings.filter(f => f.status === 'error');
+    assert.deepEqual(found.map(f => [f.id, f.paths]), [['submission.report', [name]]], name);
+  }
+});
+test('a project with no Java file in the coursework package is critical', async () => {
+  const other = [...entriesFor('')];
+  other[4] = ['src/lab3/Main.java', 'package lab3; class Main {}'];
+  const wrong = await checkSubmission(await zip(other), 'diver-26-27');
+  const error = wrong.findings.find(f => f.id === 'fop.package');
+  assert.equal(error?.status, 'error');
+  assert.match(error.title, /not the Diver project/);
+  assert.match(error.message, /uk\.ac\.bradford\.divegame/);
+  // Last year's coursework, by its folder.
+  other[4] = ['src/uk/ac/bradford/farmgame/GameEngine.java', 'package uk.ac.bradford.farmgame; class GameEngine {}'];
+  assert.ok(has(await checkSubmission(await zip(other), 'diver-26-27'), 'fop.package', 'error'));
+  // Either the folder or the declaration is enough; a comment or longer name does not count.
+  for (const [path, text, found] of [
+    ['src/uk/ac/bradford/divegame/Main.java', 'class Main {}', true],
+    ['src/Main.java', '/* c */ package  uk.ac.bradford.divegame ; class Main {}', true],
+    ['src/Main.java', '// package uk.ac.bradford.divegame;\nclass Main {}', false],
+    ['src/Main.java', 'package uk.ac.bradford.divegame2; class Main {}', false],
+    ['src/Main.java', 'package my.uk.ac.bradford.divegame; class Main {}', false],
+  ]) {
+    other[4] = [path, text];
+    const result = await checkSubmission(await zip(other), 'diver-26-27');
+    assert.equal(!has(result, 'fop.package', 'error'), found, text);
+  }
 });
 test('an incomplete export still receives specific expected-file feedback', async () => {
   const result = await checkSubmission(
@@ -236,34 +257,52 @@ test('metadata and backups do not become the detected project', async () => {
 test('project marker matching requires a complete path component', () => {
   assert.deepEqual(detectRoots(['notbuild.xml', 'x/notnbproject/project.xml']), []);
 });
-test('starter comparison tolerates BOM and line endings but notices code edits', async () => {
+test('starter comparison ignores BOM, line endings, comments and layout but notices code edits', async () => {
   const path = 'src/Main.java';
-  const starter = 'class Main {\n}\n';
+  const starter = 'class Main {\n    int x = 1; // set\n}\n';
   const profile = {
     ...getProfile('farm-25-26'),
     expectedSourceFiles: [path],
-    starter: { [path]: await sha256(starter) },
+    starter: { [path]: await sha256(codeOnly(starter)) },
     checks: ['netbeans.project', 'fop.starter'],
   };
   const records = new Map(entriesFor('').map(([path, text]) => [path, { path, text, size: text.length }]));
-  records.get(path).text = '\uFEFFclass Main {\r\n}\r\n';
-  let result = await inspectProject({ files: records, portability: [] }, profile);
-  assert.ok(result.some(f => f.id === 'fop.starter' && f.status === 'error'));
-  records.get(path).text = 'class Main { int changed; }';
-  result = await inspectProject({ files: records, portability: [] }, profile);
-  assert.equal(
-    result.some(f => f.id === 'fop.starter'),
-    false,
-  );
+  const unchanged = async text => {
+    records.get(path).text = text;
+    const result = await inspectProject({ files: records, portability: [] }, profile);
+    return result.some(f => f.id === 'fop.starter' && f.status === 'error');
+  };
+  for (const text of [
+    starter,
+    '\uFEFFclass Main {\r\n    int x = 1; // set\r\n}\r\n',
+    '/**\n * @author A Student\n */\nclass Main {\n    int x = 1;\n}\n',
+    'class Main\n{\n\n\tint x=1;   /* set */\n}',
+  ]) {
+    assert.equal(await unchanged(text), true, text);
+  }
+  for (const text of ['class Main { int changed; }', 'class Main {\n    int x = 2;\n}\n', 'class Main {\n    int y = 1;\n}\n']) {
+    assert.equal(await unchanged(text), false, text);
+  }
+  // Extra Java files do not hide an untouched starter.
+  records.set('src/Extra.java', { path: 'src/Extra.java', text: 'class Extra {}', size: 14 });
+  assert.equal(await unchanged(starter), true);
   assert.equal(normaliseText('\uFEFFx\r\ny\rz'), 'x\ny\nz');
+});
+test('code comparison keeps literals exactly and words apart', () => {
+  assert.equal(
+    codeOnly('int a = "x  // y" + \'/\'; /* c */ String t = """\n  a "" b\n"""; a -= b//z\n;'),
+    'int a="x  // y"+\'/\';String t="""\n  a "" b\n""";a-=b;',
+  );
+  assert.equal(codeOnly('public\n  static/**/void'), 'public static void');
+  assert.notEqual(codeOnly('s = "a b";'), codeOnly('s = "a  b";'));
 });
 test('a file that changed between starter releases matches any release, unchanged', async () => {
   const path = 'src/Main.java';
-  const releases = ['class Main {\n}\n', 'class Main {\n    // fixed\n}\n'];
+  const releases = ['class Main {\n}\n', 'class Main {\n    int fixed;\n}\n'];
   const profile = {
     ...getProfile('farm-25-26'),
     expectedSourceFiles: [path],
-    starter: { [path]: await Promise.all(releases.map(text => sha256(text))) },
+    starter: { [path]: await Promise.all(releases.map(text => sha256(codeOnly(text)))) },
     checks: ['netbeans.project', 'fop.starter'],
   };
   const records = new Map(entriesFor('').map(([path, text]) => [path, { path, text, size: text.length }]));

@@ -5,6 +5,14 @@ import { LIMITS } from './profiles.js';
 const MAX_PAGES = 200;
 const MAX_TEXT = 2 * 1024 * 1024; // characters of text
 
+// Below this many words a report is probably a cover page or a draft: the brief asks for at
+// least 25 words on each task attempted.
+export const SHORT_REPORT_WORDS = 100;
+export const wordCount = words =>
+  makeFinding(words < SHORT_REPORT_WORDS ? 'report.words.warning' : 'report.words.pass', {
+    count: words.toLocaleString(),
+  });
+
 // The check stops with this one finding.
 const stop = (report, key, values) => ({ ...report, complete: false, findings: [makeFinding(key, values)] });
 
@@ -87,7 +95,7 @@ export async function checkPdfReport(file, report, { progress = () => {}, limits
       report.findings.push(makeFinding('report.word-format.warning.2'));
       if (!/\.pdf$/i.test(file.name)) report.findings.push(makeFinding('report.extension.warning.2'));
       if (!words) report.findings.push(makeFinding('report.pdf-text.warning'));
-      else report.findings.push(makeFinding('report.words.pass.2', { count: words.toLocaleString() }));
+      else report.findings.push(wordCount(words));
       report.complete = true;
       report.pageCount = pages;
       return report;
